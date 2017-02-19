@@ -1,2 +1,2 @@
 #CubeCraft
-##My Minecraft c++ clone
+##My Minecraft c++ clone.

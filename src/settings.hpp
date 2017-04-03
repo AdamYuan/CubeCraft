@@ -1,4 +1,5 @@
 #pragma once
+#define DAEMON_DELAY 1 //ms
 #define BLOCK_TEX_NUM 9
 #define CHUNK_SIZE 32
 #define VIEW_DISTANCE 256 //blocks
@@ -8,4 +9,4 @@
 #define PHYSICS true
 #define HITTEST_DELTA 0.001f
 #define MAX_MOVE_DIST 128.0f
-#define TJUNC_DELTA 0.002f //dealing with t-junction
+#define TJUNC_DELTA 0.001f //dealing with t-junction

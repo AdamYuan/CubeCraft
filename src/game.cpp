@@ -22,14 +22,13 @@ namespace game
 {
 	sf::Window win;
 	sf::Event evt;
-	int width=720,height=480;//window size
+	unsigned int width=720, height=480;//window size
 	world wld;
 	bool control=true;
 	player gamePlayer;
 
 	bool showFrame=false;
 	string fps_info;
-	const double PI  =3.141592653589793238463;
 
 	void init_gl()
 	{
@@ -41,13 +40,13 @@ namespace game
 		glc.minorVersion = 3;
 		glc.attributeFlags = sf::ContextSettings::Core;
 		//Create window
-		win.create(sf::VideoMode(width,height,32),"CubeCraft",
+		win.create(sf::VideoMode(width, height, 32),"CubeCraft",
 				   sf::Style::Titlebar|sf::Style::Close|sf::Style::Resize,glc);
 
 		//win.setVerticalSyncEnabled(true);//vertical sync
 
 		//init glew
-		glewExperimental=true;
+		glewExperimental=GL_TRUE;
 		if(glewInit()!=GLEW_OK)
 		{
 			std::cout << "INIT GLEW FAILED" << std::endl;
@@ -60,6 +59,7 @@ namespace game
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_CCW);
 
@@ -75,21 +75,25 @@ namespace game
 		fn.SetFrequency(0.005f);
 		fn.SetFractalOctaves(3);
 		fn.SetNoiseType(FastNoise::NoiseType::SimplexFractal);
-		for(int i=0;i<CHUNK_SIZE*size;++i)
-			for(int j=0;j<CHUNK_SIZE*size;++j)
-				for(int k=0;k<CHUNK_SIZE*size;++k)
-				{
-					if(fn.GetNoise(i, j, k)>=0)
-						wld.voxels.setBlock(i, j, k,
-											(fn.GetNoise(i, j+1, k)>=0) ? blocks::dirt : blocks::grass);
+		for (int i = 0; i < CHUNK_SIZE * size; ++i)
+			for (int k = 0; k < CHUNK_SIZE * size; ++k) {
+				block current = blocks::grass;
+				for (int j = CHUNK_SIZE * size; j--;) {
+					if (fn.GetNoise(i, j, k) >= 0) {
+						wld.voxels.setBlock(i, j, k, current);
+						current = blocks::stone;
+					}
+					else
+						current = blocks::grass;
 				}
+			}
 
 		gamePlayer.position=glm::vec3(size*CHUNK_SIZE/2.0f,size*CHUNK_SIZE+2.0f,size*CHUNK_SIZE/2.0f);
 	}
 	void loop()
 	{
 		sf::Clock clock;
-		int last=0;
+		uint last=0;
 
 		while(win.isOpen())
 		{
@@ -99,7 +103,7 @@ namespace game
 			if((uint)clock.getElapsedTime().asSeconds() != last)
 			{
 				fps_info = "fps:" + std::to_string(framerate::getFps());
-				last = (int) clock.getElapsedTime().asSeconds();
+				last = (uint)clock.getElapsedTime().asSeconds();
 			}
 			if(control)
 			{
@@ -200,9 +204,4 @@ namespace game
 							 glm::vec4(1), glm::vec4(0,0,0,0.3f), matrix::matrix2d,
 							 renderer::textStyle::regular);
 	}
-	box getPlayerBox(glm::vec3 pos)
-	{
-		return box(glm::vec3(pos.x-0.3,pos.y-1.6f,pos.z-0.3f),pos+0.3f);
-	}
-
 };

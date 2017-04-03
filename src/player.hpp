@@ -1,5 +1,5 @@
 #pragma once
-#include "types.hpp"
+#include "util.hpp"
 #include <SFML/System.hpp>
 class player
 {
@@ -19,7 +19,6 @@ class player
 	bool moveForward(float dist,int degree);
 	bool moveUp(float dist);
 	void jump();
-	void fall(float time);
 	void physics();
 	void update();
 };

@@ -10,12 +10,11 @@
 void world::bgWork()
 {
 	bgMtx.lock();
-	if(!chunkMeshingList.empty())
-	{
-		voxels.getChunk(chunkMeshingList.front())->updateAll();
-		chunkInMeshingList.erase(chunkMeshingList.front());
-		chunkMeshingList.erase(chunkMeshingList.begin());
-	}
+
+	voxels.getChunk(chunkMeshingList.front())->updateAll();
+	chunkInMeshingList.erase(chunkMeshingList.front());
+	chunkMeshingList.erase(chunkMeshingList.begin());
+
 	bgMtx.unlock();
 }
 void world::updateChunkLists()
@@ -28,12 +27,12 @@ void world::updateChunkLists()
 	//chunkMeshingList.clear();
 	for(auto i=voxels.chunks.begin();i!=voxels.chunks.end();)
 	{
-		chunk *&chk=i->second;
+		chunkPtr &chk=i->second;
 		glm::ivec3 pos=i->first;
 
 		if(!chk)//delete if the chunk is null
 		{
-			i=voxels.chunks.erase(i);
+			i = voxels.chunks.erase(i);
 			continue;
 		}
 
@@ -56,7 +55,7 @@ void world::updateChunkLists()
 			continue;
 		}
 
-		glm::vec3 center=(glm::vec3)pos*(float)CHUNK_SIZE+glm::vec3(CHUNK_SIZE/2);
+		glm::vec3 center=(glm::vec3) pos*(float)CHUNK_SIZE+glm::vec3(CHUNK_SIZE/2);
 
 		//Cull far away chunks
 		if(glm::distance(camera::position,center) > VIEW_DISTANCE+CHUNK_SIZE)
@@ -69,16 +68,16 @@ void world::updateChunkLists()
 
 		++i;
 	}
-	std::sort(chunkMeshingList.begin(),chunkMeshingList.end(),
-			  [=](glm::ivec3 a, glm::ivec3 b)->bool
+	std::sort(chunkMeshingList.begin(), chunkMeshingList.end(),
+			  [=](const glm::ivec3 &a, const glm::ivec3 &b)->bool
 			  {
-				  return glm::distance((glm::vec3)a,
-									   (glm::vec3)game::gamePlayer.chunkPos) <
-						 glm::distance((glm::vec3)b,
-									   (glm::vec3)game::gamePlayer.chunkPos);
+                  glm::vec3 v1 = game::gamePlayer.chunkPos - a;
+				  glm::vec3 v2 = game::gamePlayer.chunkPos - b;
+				  return glm::length(v1) < glm::length(v2);
 			  });
 	bgMtx.unlock();
-
-	std::thread _thread(&world::bgWork, this);
-	_thread.detach();
+	if(!chunkMeshingList.empty()) {
+		std::thread thr(&world::bgWork, this);
+		thr.detach();
+	}
 }

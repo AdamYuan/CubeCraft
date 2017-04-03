@@ -1,4 +1,4 @@
-#include "types.hpp"
+#include "util.hpp"
 glm::ivec3 fdirects[]=
 {
 	glm::ivec3(1,0,0),

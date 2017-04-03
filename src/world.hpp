@@ -6,16 +6,14 @@
 #include <vector>
 #include <thread>
 #include <mutex>
-#include "types.hpp"
+#include "util.hpp"
 
 class world
 {
-private:
+  private:
 	void bgWork();
 	std::mutex bgMtx;
-public:
-	std::thread bgThread;
-
+  public:
 	superChunk voxels;
 
 	std::vector<glm::ivec3> chunkRenderList;
@@ -27,5 +25,4 @@ public:
 	std::vector<glm::ivec3> chunkMeshingList;
 
 	void updateChunkLists();
-	//void startUpdateThread();
 };

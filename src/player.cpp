@@ -186,7 +186,7 @@ void player::physics()
 
 	//gravity
 	if(!first_fall)
-		moveUp(-GRAVITY*gravity_timer.getElapsedTime().asSeconds());
+		moveUp(-GRAVITY * gravity_timer.getElapsedTime().asSeconds());
 
 	//if(jumping && position.y-last_pos.y > 1.0f)
 	//	position.y=last_pos.y+1.0f;

@@ -1,19 +1,21 @@
 #pragma once
 #include <unordered_map>
+#include <memory>
 #include "chunk.hpp"
-#include "types.hpp"
+#include "util.hpp"
 
+using chunkPtr = std::shared_ptr<chunk>;
 class superChunk
 {
   public:
-	std::unordered_map<glm::ivec3,chunk*> chunks;
+	std::unordered_map<glm::ivec3, chunkPtr> chunks;
 
 	static glm::ivec3 getChunkPos(int x,int y,int z);
 	static glm::ivec3 getChunkPos(const glm::ivec3 &pos);
 	void setChunk(int x,int y,int z);
 	void setChunk(const glm::ivec3 &chunkPos);
-	chunk *getChunk(int x,int y,int z);
-	chunk *getChunk(const glm::ivec3 &chunkPos);
+	chunkPtr getChunk(int x,int y,int z);
+	chunkPtr getChunk(const glm::ivec3 &chunkPos);
 	void eraseChunk(int x,int y,int z);
 	void eraseChunk(const glm::ivec3 &chunkPos);
 

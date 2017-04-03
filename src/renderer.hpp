@@ -4,7 +4,7 @@ class renderer
 {
   public:
 	enum textStyle {regular=0,bold};
-	static void applyChunkMesh(chunk *chk);
+	static void applyChunkMesh(chunkPtr chk);
 	static void renderWorld(world *wld);
 	static void renderCross();
 	static void renderText(const glm::vec2 &pos,const std::string &str,

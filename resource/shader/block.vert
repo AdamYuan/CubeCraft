@@ -10,7 +10,7 @@ out float frag_ao;
 out float frag_light;
 out vec3 pos;
 
-const float AOcurve[4] = float[4](0.6, 0.7, 0.8, 1.0);
+const float AOcurve[4] = float[4](0.55, 0.7, 0.85, 1.0);
 
 void main()
 {
@@ -21,5 +21,5 @@ void main()
 
 	gl_Position=matrix*position;
 
-	pos=ivec3(position.xyz+0.5);
+	pos=ivec3(position.xyz + 0.5);
 }

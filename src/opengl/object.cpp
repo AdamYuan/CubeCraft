@@ -44,9 +44,9 @@ void object::setAttribs(int attr_count, ...)
 	{
 		GLint attr_id=attribs[i][0];
 		int size=attribs[i][1];
-		glVertexAttribPointer(attr_id,size,GL_FLOAT,GL_FALSE,
-							  sum*sizeof(float),(void*)(now*sizeof(float)));
-		glEnableVertexAttribArray(attr_id);
+		glVertexAttribPointer((GLuint) attr_id, size, GL_FLOAT, GL_FALSE,
+							  sum*sizeof(float), (void*)(now*sizeof(float)));
+		glEnableVertexAttribArray((GLuint) attr_id);
 		now+=size;
 	}
 	elements=dataNum/now;

@@ -77,7 +77,3 @@ void shader::use()
 {
 	glUseProgram(programId);
 }
-void shader::unuse()
-{
-	glUseProgram(0);
-}

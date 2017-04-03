@@ -3,14 +3,14 @@
 #include "opengl/frustum.hpp"
 #include "renderer.hpp"
 #include "resource.hpp"
-#include "types.hpp"
+#include "util.hpp"
 #include <iostream>
 #include <string>
 #include <vector>
 #include <GL/glew.h>
 
 //update the vertex mesh of a chunk
-void renderer::applyChunkMesh(chunk *chk)
+void renderer::applyChunkMesh(chunkPtr chk)
 {
 	//add the data array into the VAO,VBO
 	chk->obj.beginRecord();
@@ -118,7 +118,6 @@ void renderer::renderText(const glm::vec2 &pos,const std::string &str,
 		vertices.push_back(v11);
 		vertices.push_back(v01);
 	}
-
 	text_obj.beginRecord();
 	{
 		text_obj.setDataVec(vertices);

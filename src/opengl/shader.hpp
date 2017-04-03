@@ -15,5 +15,4 @@ class shader
 	int getUniform(std::string str);
 	int getAttribute(std::string str);
 	void use();
-	static void unuse();
 };

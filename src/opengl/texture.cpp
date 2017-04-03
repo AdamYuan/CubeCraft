@@ -52,7 +52,6 @@ void texture::buildMipmap()
 {
 	bind();
 	glGenerateMipmap(type);
-	glTexParameteri(type, GL_TEXTURE_MAX_LEVEL, 7);
 	unbind();
 }
 void texture::texParameter(GLenum min_filter,GLenum mag_filter,GLenum wrap_filter)
@@ -62,6 +61,7 @@ void texture::texParameter(GLenum min_filter,GLenum mag_filter,GLenum wrap_filte
 	glTexParameteri(type, GL_TEXTURE_MAG_FILTER, mag_filter);
 	glTexParameteri(type, GL_TEXTURE_WRAP_S, wrap_filter);
 	glTexParameteri(type, GL_TEXTURE_WRAP_T, wrap_filter);
+
 	unbind();
 }
 void texture::bind()

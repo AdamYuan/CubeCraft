@@ -1,13 +1,15 @@
 #pragma once
 #include "opengl/object.hpp"
-#include "types.hpp"
+#include "util.hpp"
 #include "blocks.hpp"
 #include "settings.hpp"
+#include <unordered_map>
+#include <mutex>
 #include <vector>
 class superChunk;
 class chunk
 {
-  public:
+public:
 	std::vector<vert_block> meshData;
 	block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	light_t lightMap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
@@ -20,8 +22,9 @@ class chunk
 	~chunk();
 	static bool isValidPos(int x,int y,int z);
 	static bool isValidPos(const glm::ivec3 &pos);
-	static int getPosNum(int x,int y,int z);
-	static int getPosNum(const glm::ivec3 &pos);
+	static int getNumFromPos(int x, int y, int z);
+	static int getNumFromPos(const glm::ivec3 &pos);
+	static glm::ivec3 getPosFromNum(int num);
 
 	void set(const glm::ivec3 &pos,const block &b);
 	void set(int x,int y,int z,const block &b);

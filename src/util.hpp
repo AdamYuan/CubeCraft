@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/glm.hpp>
+#include <atomic>
 
 #ifndef GLM_HAS_CXX11_STL
 #define GLM_HAS_CXX11_STL 1
@@ -84,3 +85,8 @@ inline int sgn(T val)
 };
 
 extern glm::ivec3 fdirects[];
+
+struct ivec3Compare
+{
+	bool operator() (const glm::ivec3&, const glm::ivec3&) const;
+};

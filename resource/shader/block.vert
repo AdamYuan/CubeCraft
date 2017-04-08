@@ -21,5 +21,5 @@ void main()
 
 	gl_Position=matrix*position;
 
-	pos=ivec3(position.xyz + 0.5);
+   	pos=round(position.xyz);
 }

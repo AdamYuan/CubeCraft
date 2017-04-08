@@ -23,9 +23,9 @@ void main()
 	vec3 coord3d;
 	coord3d.z=t;
 	if(f==2 || f==3) //top or bottom
-		coord3d.xy=vec2(fract(pos.x),fract(pos.z));
+		coord3d.xy=vec2(fract(pos.x), fract(pos.z));
 	else
-		coord3d.xy=vec2(fract(pos.x+pos.z),1-fract(pos.y));
+		coord3d.xy=vec2(fract(pos.x+pos.z), 1-fract(pos.y));
 
 	color = texture(sampler, coord3d);
 

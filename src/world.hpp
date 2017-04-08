@@ -1,28 +1,33 @@
 #pragma once
 #include "superChunk.hpp"
-#include <unordered_map>
-#include <queue>
-#include <deque>
-#include <vector>
+#include <unordered_set>
+#include <list>
 #include <thread>
 #include <mutex>
+#include "FastNoise/FastNoise.h"
 #include "util.hpp"
 
 class world
 {
   private:
-	void bgWork();
+	void chunkUpdateThread();
+	void chunkLoadingThread();
+	void setTerrain(chunkPtr chk);
+	std::unordered_set<glm::ivec3> chunkLoadedSet;
+
+	std::unordered_set<glm::ivec3> chunkLoadingSet;
+
+	std::unordered_set<glm::ivec3> chunkMeshingSet;
+
 	std::mutex bgMtx;
+	FastNoise fn;
   public:
 	superChunk voxels;
 
-	std::vector<glm::ivec3> chunkRenderList;
-
-	std::unordered_map<glm::ivec3,bool> chunkInLoadingList;
-	std::vector<glm::ivec3> chunkLoadingList;
-
-	std::unordered_map<glm::ivec3,bool> chunkInMeshingList;
-	std::vector<glm::ivec3> chunkMeshingList;
+	std::list<glm::ivec3> chunkRenderList;
 
 	void updateChunkLists();
+	void launchThreads();
+	void quitThreads();
+	void initNoise();
 };

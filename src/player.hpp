@@ -14,8 +14,8 @@ class player
 	sf::Clock gravity_timer;
 	bool jumping=false;
   public:
-	glm::vec3 position=glm::vec3(0.0f);
-	glm::ivec3 chunkPos=glm::ivec3(0);
+	glm::vec3 position=glm::vec3(0);
+	glm::ivec3 chunkPos=glm::ivec3(INT_MAX);
 	bool moveForward(float dist,int degree);
 	bool moveUp(float dist);
 	void jump();

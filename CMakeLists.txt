@@ -3,7 +3,7 @@ project(CubeCraft)
 
 set(CMAKE_BUILD_TYPE Release)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)

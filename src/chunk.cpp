@@ -135,19 +135,19 @@ void chunk::updateLighting()
         for(int x=0;x<CHUNK_SIZE;++x)
             for(int z=0;z<CHUNK_SIZE;++z)
             {
-                if(!be_coverd[x][z] && get(x,y,z)!=blocks::air)
+                if(!be_coverd[x][z] && get(x, y, z)!=blocks::air)
                     be_coverd[x][z]=true;
                 if(!be_coverd[x][z])
                 {
-                    sunLightBfsQueue.push({{x,y,z},15});//add to light queue
-                    setl(x,y,z,15);//sun light
+                    sunLightBfsQueue.push({{x,y,z}, 15});//add to light queue
+                    setl(x, y, z, 15);//sun light
                 }
             }
 
     while(!sunLightBfsQueue.empty())
     {
         lightNode &node = sunLightBfsQueue.front();
-        int x=node.position.x,y=node.position.y,z=node.position.z;
+        int x=node.position.x, y=node.position.y, z=node.position.z;
         light_t lightValue=node.light_value;
         sunLightBfsQueue.pop();
 
@@ -160,8 +160,8 @@ void chunk::updateLighting()
 
             if (block_m::isTransparent(get(np)) && getl(np) + 2 <= lightValue)
             {
-                sunLightBfsQueue.push({np,(light_t)(lightValue-1)});
-                setl(np, lightValue-1);
+                sunLightBfsQueue.push({np, (light_t)(lightValue-1)});
+                setl(np, (light_t) (lightValue - 1));
             }
         }
     }
@@ -237,10 +237,12 @@ void chunk::updateMeshing()
                 light_t center_l=getl(posi+funcs::getFaceDirect(face));
 
                 //smooth the light using the average value
-                int sum=1,sum_li=center_l;
+                int sum=1, sum_li=center_l;
                 for(int nn=0;nn<3;++nn)
                 {
-                    sum+=block_m::isTransparent(neighboors[lookup3[face][v][nn]]);
+                    if(!block_m::isTransparent(neighboors[lookup3[face][v][nn]]))
+                        continue;
+                    sum++;
                     sum_li+=neighboors_li[lookup3[face][v][nn]];
                 }
                 block_lightings[chunk::getNumFromPos(posi)][face].light[v]= (light_t) (sum_li / sum);
@@ -347,12 +349,12 @@ void chunk::updateMeshing()
                         }
 
                         // Add quad
-                        x[u] = i;
-                        x[v] = j;
+                        x[u] = (int) i;
+                        x[v] = (int) j;
 
                         float du[3] = {0}, dv[3] = {0};
 
-                        int f=static_cast<int>(axis)*2+(c<=0);
+                        short f= (short) (axis * 2 + (c <= 0));
 
 
                         if (c > 0)
@@ -367,7 +369,7 @@ void chunk::updateMeshing()
                             dv[u] = width+TJUNC_DELTA*2.0f;
                         }
 
-                        int tex=block_m::getTexture(c, f);
+                        int tex=block_m::getTexture((block) c, f);
                         float vx=chunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
                                 vy=chunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
                                 vz=chunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;

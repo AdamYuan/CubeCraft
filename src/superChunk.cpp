@@ -22,12 +22,14 @@ void superChunk::setChunk(const glm::ivec3 &chunkPos)
 }
 void superChunk::setChunk(int x,int y,int z)
 {
-	setChunk(glm::ivec3(x,y,z));
+	setChunk(glm::ivec3(x, y, z));
 }
 
 std::shared_ptr<chunk> superChunk::getChunk(const glm::ivec3 &chunkPos)
 {
-	return chunks[chunkPos];
+	if(chunks.count(chunkPos))
+		return chunks[chunkPos];
+	return nullptr;
 }
 std::shared_ptr<chunk> superChunk::getChunk(int x,int y,int z)
 {
@@ -36,7 +38,8 @@ std::shared_ptr<chunk> superChunk::getChunk(int x,int y,int z)
 
 void superChunk::eraseChunk(const glm::ivec3 &chunkPos)
 {
-	chunks.erase(chunkPos);
+	if(chunks.count(chunkPos))
+		chunks.erase(chunkPos);
 }
 void superChunk::eraseChunk(int x,int y,int z)
 {

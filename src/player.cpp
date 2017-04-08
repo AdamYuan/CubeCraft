@@ -212,6 +212,7 @@ void player::update()
 {
 	if(PHYSICS)
 		physics();
-	chunkPos=superChunk::getChunkPos(position);
+	glm::ivec3 i3 = superChunk::getChunkPos(position);
+	chunkPos = i3;
 	camera::position=position;
 }

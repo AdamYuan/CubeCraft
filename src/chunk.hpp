@@ -3,15 +3,15 @@
 #include "util.hpp"
 #include "blocks.hpp"
 #include "settings.hpp"
-#include <unordered_map>
-#include <mutex>
 #include <vector>
+#include <atomic>
+
 class superChunk;
 class chunk
 {
 public:
 	std::vector<vert_block> meshData;
-	block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+    block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	light_t lightMap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	bool beCoverd[CHUNK_SIZE][CHUNK_SIZE];
 	superChunk *parent;

@@ -3,8 +3,6 @@
 #include "renderer.hpp"
 #include "resource.hpp"
 #include <iostream>
-#include <string>
-#include <cstdlib>
 #define GLEW_STATIC
 #include <GL/glew.h>
 
@@ -63,42 +61,21 @@ namespace game
 		glEnable(GL_CULL_FACE);
 		glCullFace(GL_CCW);
 
-		int size=5;
-		for(int i=0;i<size;++i)
-			for(int j=0;j<size;++j)
-				for(int k=0;k<size;++k)
-					wld.voxels.setChunk(i,j,k);
-
-		FastNoise fn;
 		srand((unsigned int)time(0));
-		fn.SetSeed(rand());
-		fn.SetFrequency(0.005f);
-		fn.SetFractalOctaves(3);
-		fn.SetNoiseType(FastNoise::NoiseType::SimplexFractal);
-		for (int i = 0; i < CHUNK_SIZE * size; ++i)
-			for (int k = 0; k < CHUNK_SIZE * size; ++k) {
-				block current = blocks::grass;
-				for (int j = CHUNK_SIZE * size; j--;) {
-					if (fn.GetNoise(i, j, k) >= 0) {
-						wld.voxels.setBlock(i, j, k, current);
-						current = blocks::stone;
-					}
-					else
-						current = blocks::grass;
-				}
-			}
 
-		gamePlayer.position=glm::vec3(size*CHUNK_SIZE/2.0f,size*CHUNK_SIZE+2.0f,size*CHUNK_SIZE/2.0f);
+        wld.initNoise();
+		//gamePlayer.position=glm::vec3(size*CHUNK_SIZE/2.0f,size*CHUNK_SIZE+2.0f,size*CHUNK_SIZE/2.0f);
 	}
 	void loop()
 	{
 		sf::Clock clock;
 		uint last=0;
 
+        wld.launchThreads();
+
 		while(win.isOpen())
 		{
 			framerate::update();
-
 
 			if((uint)clock.getElapsedTime().asSeconds() != last)
 			{
@@ -127,6 +104,8 @@ namespace game
 			//swap window
 			win.display();
 		}
+
+		wld.quitThreads();
 	}
 	void keyControl()
 	{

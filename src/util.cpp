@@ -1,4 +1,5 @@
 #include "util.hpp"
+
 glm::ivec3 fdirects[]=
 {
 	glm::ivec3(1,0,0),
@@ -27,4 +28,10 @@ bool funcs::intersect(box a,box b,bool touchForTrue)
 glm::ivec3 funcs::getFaceDirect(short face)
 {
 	return fdirects[face];
+}
+
+bool ivec3Compare::operator()(const glm::ivec3 &lhs, const glm::ivec3 &rhs) const
+{
+	return lhs.x < rhs.x ||
+		   lhs.x == rhs.x && (lhs.y < rhs.y || lhs.y == rhs.y && lhs.z < rhs.z);
 }

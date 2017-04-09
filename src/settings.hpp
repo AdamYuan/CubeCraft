@@ -6,7 +6,7 @@
 #define CHUNK_LOAD_DISTANCE 5 //chunks
 #define GRAVITY 3.0f //gravity
 #define JUMP_STEP 0.85f
-#define PHYSICS true
+#define PHYSICS false
 #define HITTEST_DELTA 0.001f
 #define MAX_MOVE_DIST 128.0f
 #define TJUNC_DELTA 0.001f //dealing with t-junction

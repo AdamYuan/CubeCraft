@@ -5,16 +5,16 @@
 #include "opengl/frustum.hpp"
 #include "renderer.hpp"
 glm::ivec3 lastPlayerChunkPos(INT_MAX);
-bool minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
+bool world::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 {
     if(b.x == INT_MAX) return true;
-	bool af = frustum::cubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	bool bf = frustum::cubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	if(af != bf)
-		return af;
-	glm::vec3 v1 = game::gamePlayer.chunkPos - a;
-	glm::vec3 v2 = game::gamePlayer.chunkPos - b;
-	return glm::length(v1) < glm::length(v2);
+	float af = frustum::cubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
+	float bf = frustum::cubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
+	float au = !voxels.getChunk(a)->meshed;
+	float bu = !voxels.getChunk(b)->meshed;
+	float al = glm::length((glm::vec3)(game::gamePlayer.chunkPos - a));
+	float bl = glm::length((glm::vec3)(game::gamePlayer.chunkPos - b));
+	return al/(af*2 + au/2.0f + 1.0f) < bl/(bf*2 + bu/2.0f + 1.0f);
 }
 void world::initNoise()
 {
@@ -29,14 +29,14 @@ void world::setTerrain(chunkPtr chk)
 		for (int k = 0; k < CHUNK_SIZE; ++k) {
 			block current = fn.GetNoise(
 					chk->chunkPos.x*CHUNK_SIZE + i,
-					chk->chunkPos.y*CHUNK_SIZE + CHUNK_SIZE + 1,
-					chk->chunkPos.z*CHUNK_SIZE + k) >= 0 ?
+					chk->chunkPos.y*CHUNK_SIZE + CHUNK_SIZE,
+					chk->chunkPos.z*CHUNK_SIZE + k) >= 0.1 ?
 							blocks::stone : blocks::grass;
 			for (int j = CHUNK_SIZE; j--;) {
 				if (fn.GetNoise(
 						chk->chunkPos.x*CHUNK_SIZE + i,
 						chk->chunkPos.y*CHUNK_SIZE + j,
-						chk->chunkPos.z*CHUNK_SIZE + k) >= 0) {
+						chk->chunkPos.z*CHUNK_SIZE + k) >= 0.1) {
 					chk->set(i, j, k, current);
 					current = blocks::stone;
 				}
@@ -48,6 +48,7 @@ void world::setTerrain(chunkPtr chk)
 void world::chunkLoadingThread()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
+	std::cout << "In Loading Thread: " << std::this_thread::get_id() << std::endl;
 
 	if(chunkLoadingSet.empty())
 		return;
@@ -59,16 +60,15 @@ void world::chunkLoadingThread()
 
 
 	chunkPtr chk = voxels.getChunk(pos);
-	if(chk) {
-		setTerrain(chk);
-		chunkLoadedSet.insert(pos);
-	}
+	setTerrain(chk);
+	chunkLoadedSet.insert(pos);
 	chunkLoadingSet.erase(pos);
 
 }
-void world::chunkUpdateThread()
+void world::chunkMeshingThread()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
+	std::cout << "In Meshing Thread: " << std::this_thread::get_id() << std::endl;
 
 	if(chunkMeshingSet.empty())
 		return;
@@ -80,8 +80,9 @@ void world::chunkUpdateThread()
 
 	chunkPtr chk = voxels.getChunk(pos);
 
-	if(chk)
-		chk->updateAll();
+	chk->updateAll();
+	//chk->updateMeshing();
+	//printf("Updated: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 
 	chunkMeshingSet.erase(pos);
 }
@@ -103,9 +104,9 @@ void world::updateChunkLists()
 				{
 					if(!chunkLoadingSet.count(i3) && !chunkLoadedSet.count(i3))
 					{
-						printf("push: (%d, %d, %d)\n", i3.x, i3.y, i3.z);
 						voxels.setChunk(i3);
 						chunkLoadingSet.insert(i3);
+						printf("Loaded: (%d, %d, %d)\n", i3.x, i3.y, i3.z);
 					}
 				}
 	for(auto i=voxels.chunks.begin();i!=voxels.chunks.end();)
@@ -124,9 +125,12 @@ void world::updateChunkLists()
 		   || pos.x > maxLoadRange.x || pos.y > maxLoadRange.y || pos.z > maxLoadRange.z)
 		{// chunk is out of loading range
 			++i;
+			//completely erase the chunk
 			voxels.eraseChunk(pos);
+			chunkLoadingSet.erase(pos);
+			chunkMeshingSet.erase(pos);
 			chunkLoadedSet.erase(pos);
-			printf("erase: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
+			printf("Unloaded: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 			continue;
 		}
 
@@ -177,7 +181,7 @@ void world::updateChunkLists()
 
 	if(!chunkMeshingSet.empty())
 	{
-		std::thread meshThr(&world::chunkUpdateThread, this);
+		std::thread meshThr(&world::chunkMeshingThread, this);
 		meshThr.detach();
 	}
 }

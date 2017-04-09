@@ -27,8 +27,7 @@ void renderer::applyChunkMesh(chunkPtr chk)
 	chk->meshData.clear();
 	chk->meshData.shrink_to_fit();
 
-	printf("Chunk x:%d y:%d z:%d updated with %d vertices\n",
-		   chk->chunkPos.x,chk->chunkPos.y,chk->chunkPos.z,chk->obj.elements);
+	chk->meshed = true;
 }
 
 void renderer::renderWorld(world *wld)
@@ -61,20 +60,17 @@ void renderer::renderWorld(world *wld)
 void renderer::renderCross()
 {
 	float p = 15.0;
-	const float vertices[] =
-			{
-				0,-p,0,p,-p,0,p,0
-			};
-	resource::crossObj.beginRecord();
+	static const float vertices[] = {0, -p, 0, p, -p, 0, p, 0};
+	object crossObj;
+	crossObj.beginRecord();
 	{
-		resource::crossObj.setDataArr(vertices, 8);
-		resource::crossObj.setAttribs(1,
-									  resource::lineShader_attr_position,2);
-	}resource::crossObj.endRecord();
+		crossObj.setDataArr(vertices, 8);
+		crossObj.setAttribs(1, resource::lineShader_attr_position, 2);
+	}crossObj.endRecord();
 
 	resource::lineShader.use();
 
-	glUniformMatrix4fv(resource::lineShader_unif_matrix,1,GL_FALSE,glm::value_ptr(matrix::matrix2d_center));
+	glUniformMatrix4fv(resource::lineShader_unif_matrix, 1, GL_FALSE, glm::value_ptr(matrix::matrix2d_center));
 
 	glLineWidth(3.0f);
 
@@ -82,7 +78,7 @@ void renderer::renderCross()
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT); //invert color
 
-	resource::crossObj.render(GL_LINES);
+	crossObj.render(GL_LINES);
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_COLOR_LOGIC_OP);
@@ -97,7 +93,7 @@ void renderer::renderText(const glm::vec2 &pos,const std::string &str,
 {
 	std::vector<vert_text> vertices;
 	object text_obj;
-	float unit = 1.0/96.0f;
+	float unit = 1.0f/96.0f;
 	for(int c=0;c<(int)str.size();++c)
 	{
 		int coord=str[c]-32;
@@ -106,10 +102,10 @@ void renderer::renderText(const glm::vec2 &pos,const std::string &str,
 		//|    \    |
 		//|       \ |
 		//11--------01
-		vert_text v00={(float)pos.x+t_width*c, (float)pos.y, coord*unit, 0.0f};
-		vert_text v01={(float)pos.x+t_width*(c+1), (float)pos.y+t_height, (coord+1.0f)*unit, 1.0f};
-		vert_text v10={(float)pos.x+t_width*(c+1), (float)pos.y, (coord+1.0f)*unit, 0.0f};
-		vert_text v11={(float)pos.x+t_width*c, (float)pos.y+t_height, coord*unit, 1.0f};
+		vert_text v00={pos.x+t_width*c, pos.y, coord*unit, 0.0f};
+		vert_text v01={pos.x+t_width*(c+1), pos.y+t_height, (coord+1.0f)*unit, 1.0f};
+		vert_text v10={pos.x+t_width*(c+1), pos.y, (coord+1.0f)*unit, 0.0f};
+		vert_text v11={pos.x+t_width*c, pos.y+t_height, coord*unit, 1.0f};
 		vertices.push_back(v00);
 		vertices.push_back(v01);
 		vertices.push_back(v10);

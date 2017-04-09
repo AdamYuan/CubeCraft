@@ -11,9 +11,12 @@ class chunk
 {
 public:
 	std::vector<vert_block> meshData;
-    block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+	block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	light_t lightMap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
+	bool meshed = false;
 	bool beCoverd[CHUNK_SIZE][CHUNK_SIZE];
+	bool updatedNeighbourMeshing[6];
+	bool updatedNeighbourLighting[6];
 	superChunk *parent;
 	glm::ivec3 chunkPos;
 	std::string chunkLabel;

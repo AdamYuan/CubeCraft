@@ -64,7 +64,7 @@ namespace game
 		srand((unsigned int)time(0));
 
         wld.initNoise();
-		//gamePlayer.position=glm::vec3(size*CHUNK_SIZE/2.0f,size*CHUNK_SIZE+2.0f,size*CHUNK_SIZE/2.0f);
+
 	}
 	void loop()
 	{
@@ -109,7 +109,7 @@ namespace game
 	}
 	void keyControl()
 	{
-		float dist=0.7f;
+		float dist=1.5f;
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::W))
 			gamePlayer.moveForward(dist, 0);
 		if(sf::Keyboard::isKeyPressed(sf::Keyboard::S))
@@ -136,9 +136,9 @@ namespace game
 				win.close();
 			if(evt.type==sf::Event::Resized)
 			{
-				width=evt.size.width,height=evt.size.height;
+				width=evt.size.width, height=evt.size.height;
 				glViewport(0, 0, width, height);
-				matrix::updateMatrix(width,height);
+				matrix::updateMatrix(width, height);
 				//std::cout << "RESIZED " << width << "x" << height << std::endl;
 			}
 			if(evt.type==sf::Event::MouseMoved && control)

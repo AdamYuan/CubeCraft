@@ -1,6 +1,6 @@
 #pragma once
 #include "superChunk.hpp"
-#include <unordered_set>
+#include <set>
 #include <list>
 #include <thread>
 #include <mutex>
@@ -10,14 +10,15 @@
 class world
 {
   private:
-	void chunkUpdateThread();
+	bool minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b);
+	void chunkMeshingThread();
 	void chunkLoadingThread();
 	void setTerrain(chunkPtr chk);
-	std::unordered_set<glm::ivec3> chunkLoadedSet;
+	std::set<glm::ivec3, ivec3Compare> chunkLoadedSet;
 
-	std::unordered_set<glm::ivec3> chunkLoadingSet;
+	std::set<glm::ivec3, ivec3Compare> chunkLoadingSet;
 
-	std::unordered_set<glm::ivec3> chunkMeshingSet;
+	std::set<glm::ivec3, ivec3Compare> chunkMeshingSet;
 
 	std::mutex bgMtx;
 	FastNoise fn;

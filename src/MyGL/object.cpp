@@ -1,5 +1,8 @@
 #include "object.hpp"
+#include <vector>
 #include <cstdarg>
+#include <iostream>
+#include <GL/glew.h>
 void object::init()
 {
 	if(inited)
@@ -21,8 +24,12 @@ void object::beginRecord()
 {
 	init();
 	glBindVertexArray(VAO);
-	//std::cout << glGetError() << ' ' << VAO << std::endl;
 	glBindBuffer(GL_ARRAY_BUFFER,VBO);
+}
+void object::endRecord()
+{
+	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glBindVertexArray(0);
 }
 void object::setAttribs(int attr_count, ...)
 {
@@ -44,17 +51,14 @@ void object::setAttribs(int attr_count, ...)
 	{
 		GLint attr_id=attribs[i][0];
 		int size=attribs[i][1];
-		glVertexAttribPointer((GLuint) attr_id, size, GL_FLOAT, GL_FALSE,
-							  sum*sizeof(float), (void*)(now*sizeof(float)));
-		glEnableVertexAttribArray((GLuint) attr_id);
+		glVertexAttribPointer(attr_id,size,GL_FLOAT,GL_FALSE,
+							  sum*sizeof(float),(void*)(now*sizeof(float)));
+		glEnableVertexAttribArray(attr_id);
 		now+=size;
 	}
 	elements=dataNum/now;
-}
-void object::endRecord()
-{
-	glBindBuffer(GL_ARRAY_BUFFER,0);
-	glBindVertexArray(0);
+
+	endRecord();
 }
 void object::render(GLenum mode)
 {

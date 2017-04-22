@@ -1,7 +1,7 @@
 #include "player.hpp"
 #include "game.hpp"
-#include "opengl/camera.hpp"
-#include "opengl/framerate.hpp"
+#include "MyGL/camera.hpp"
+#include "MyGL/framerate.hpp"
 #include <cmath>
 
 bool player::hitTest(short face,bool doAction=true)
@@ -187,15 +187,6 @@ void player::physics()
 	//gravity
 	if(!first_fall)
 		moveUp(-GRAVITY * gravity_timer.getElapsedTime().asSeconds());
-
-	//if(jumping && position.y-last_pos.y > 1.0f)
-	//	position.y=last_pos.y+1.0f;
-	/*if(jumping && position.y-last_pos.y > 0.9f && !isFloating(0.1f))
-		//if the player is jumping above a block
-	{
-		position.y=last_pos.y+1.0f;
-		jumping=false;
-		}*/
 
 	bool floating=isFloating();
 

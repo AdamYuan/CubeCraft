@@ -7,7 +7,7 @@ namespace game
 {
 	extern sf::Window win;
 	extern sf::Event evt;
-	extern unsigned int width,height;
+	extern unsigned width,height;
 	extern world wld;
 	extern player gamePlayer;
 

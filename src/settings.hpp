@@ -8,5 +8,5 @@
 #define JUMP_STEP 0.85f
 #define PHYSICS false
 #define HITTEST_DELTA 0.001f
-#define MAX_MOVE_DIST 128.0f
+#define MAX_MOVE_DIST 32.0f
 #define TJUNC_DELTA 0.001f //dealing with t-junction

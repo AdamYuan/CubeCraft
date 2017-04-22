@@ -9,18 +9,17 @@
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
 
-#include "opengl/shader.hpp"
-#include "opengl/camera.hpp"
-#include "opengl/matrix.hpp"
-#include "opengl/framerate.hpp"
-#include "opengl/frustum.hpp"
+#include "MyGL/shader.hpp"
+#include "MyGL/camera.hpp"
+#include "MyGL/matrix.hpp"
+#include "MyGL/framerate.hpp"
+#include "MyGL/frustum.hpp"
 
-#include "FastNoise/FastNoise.h"
 namespace game
 {
 	sf::Window win;
 	sf::Event evt;
-	unsigned int width=720, height=480;//window size
+	unsigned width=1080, height=680;//window size
 	world wld;
 	bool control=true;
 	player gamePlayer;
@@ -53,7 +52,7 @@ namespace game
 	}
 	void init()
 	{
-		//set opengl default mode
+		//set MyGL default mode
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
@@ -65,13 +64,13 @@ namespace game
 
         wld.initNoise();
 
+		//gamePlayer.position = {49, -206.5, 15};
+
 	}
 	void loop()
 	{
 		sf::Clock clock;
 		uint last=0;
-
-        wld.launchThreads();
 
 		while(win.isOpen())
 		{
@@ -86,7 +85,7 @@ namespace game
 			{
 				keyControl();
 				win.setMouseCursorVisible(false);//hide mouse
-				sf::Mouse::setPosition(sf::Vector2i(width/2,height/2),win);
+				sf::Mouse::setPosition(sf::Vector2i(width/2, height/2),win);
 			}
 			else
 				win.setMouseCursorVisible(true); //show mouse
@@ -97,6 +96,7 @@ namespace game
 
 			matrix::view=camera::getViewMatrix();
 			frustum::calculatePlanes(matrix::projection * matrix::view);
+
 			wld.updateChunkLists();
 
 			render();
@@ -104,8 +104,6 @@ namespace game
 			//swap window
 			win.display();
 		}
-
-		wld.quitThreads();
 	}
 	void keyControl()
 	{
@@ -172,6 +170,7 @@ namespace game
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		else
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
 		renderer::renderWorld(&wld);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

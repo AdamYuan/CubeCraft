@@ -1,6 +1,6 @@
-#include "opengl/matrix.hpp"
-#include "opengl/camera.hpp"
-#include "opengl/frustum.hpp"
+#include "MyGL/matrix.hpp"
+#include "MyGL/camera.hpp"
+#include "MyGL/frustum.hpp"
 #include "renderer.hpp"
 #include "resource.hpp"
 #include "util.hpp"
@@ -13,21 +13,15 @@
 void renderer::applyChunkMesh(chunkPtr chk)
 {
 	//add the data array into the VAO,VBO
-	chk->obj.beginRecord();
-	{
-		chk->obj.setDataVec(chk->meshData);
-		chk->obj.setAttribs(4,
-							resource::blockShader_attr_position,3,
-							resource::blockShader_attr_tex,1,
-							resource::blockShader_attr_face,1,
-							resource::blockShader_attr_lighting,2);
-	}
-	chk->obj.endRecord();
+	chk->obj.setDataVec(chk->meshData);
+	chk->obj.setAttribs(4,
+						resource::blockShader_attr_position,3,
+						resource::blockShader_attr_tex,1,
+						resource::blockShader_attr_face,1,
+						resource::blockShader_attr_lighting,2);
 
 	chk->meshData.clear();
 	chk->meshData.shrink_to_fit();
-
-	chk->meshed = true;
 }
 
 void renderer::renderWorld(world *wld)
@@ -62,11 +56,8 @@ void renderer::renderCross()
 	float p = 15.0;
 	static const float vertices[] = {0, -p, 0, p, -p, 0, p, 0};
 	object crossObj;
-	crossObj.beginRecord();
-	{
-		crossObj.setDataArr(vertices, 8);
-		crossObj.setAttribs(1, resource::lineShader_attr_position, 2);
-	}crossObj.endRecord();
+	crossObj.setDataArr(vertices, 8);
+	crossObj.setAttribs(1, resource::lineShader_attr_position, 2);
 
 	resource::lineShader.use();
 
@@ -114,13 +105,10 @@ void renderer::renderText(const glm::vec2 &pos,const std::string &str,
 		vertices.push_back(v11);
 		vertices.push_back(v01);
 	}
-	text_obj.beginRecord();
-	{
-		text_obj.setDataVec(vertices);
-		text_obj.setAttribs(2,
-							resource::textShader_attr_position,2,
-							resource::textShader_attr_texcoord,2);
-	}text_obj.endRecord();
+	text_obj.setDataVec(vertices);
+	text_obj.setAttribs(2,
+						resource::textShader_attr_position,2,
+						resource::textShader_attr_texcoord,2);
 
 	resource::textShader.use();
 

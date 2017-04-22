@@ -1,24 +1,26 @@
+#include <chrono>
 #include "world.hpp"
 #include "game.hpp"
-#include "opengl/matrix.hpp"
-#include "opengl/camera.hpp"
-#include "opengl/frustum.hpp"
+#include "MyGL/matrix.hpp"
+#include "MyGL/camera.hpp"
+#include "MyGL/frustum.hpp"
 #include "renderer.hpp"
-glm::ivec3 lastPlayerChunkPos(INT_MAX);
+
+ThreadPool threadPool(4);
+
+glm::ivec3 lastPlayerChunkPos((int) pow(CHUNK_LOAD_DISTANCE * 2 + 1, 3) * 2);
 bool world::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 {
-    if(b.x == INT_MAX) return true;
+	if(b.x == INT_MAX) return true;
 	float af = frustum::cubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
 	float bf = frustum::cubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	float au = !voxels.getChunk(a)->meshed;
-	float bu = !voxels.getChunk(b)->meshed;
 	float al = glm::length((glm::vec3)(game::gamePlayer.chunkPos - a));
 	float bl = glm::length((glm::vec3)(game::gamePlayer.chunkPos - b));
-	return al/(af*2 + au/2.0f + 1.0f) < bl/(bf*2 + bu/2.0f + 1.0f);
+	return al/(af + 1.0f) < bl/(bf + 1.0f);
 }
 void world::initNoise()
 {
-	fn.SetSeed(rand());
+	fn.SetSeed(0);
 	fn.SetFrequency(0.005f);
 	fn.SetFractalOctaves(3);
 	fn.SetNoiseType(FastNoise::NoiseType::SimplexFractal);
@@ -45,36 +47,31 @@ void world::setTerrain(chunkPtr chk)
 			}
 		}
 }
-void world::chunkLoadingThread()
+void world::chunkLoadingFunc()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
-	std::cout << "In Loading Thread: " << std::this_thread::get_id() << std::endl;
 
 	if(chunkLoadingSet.empty())
 		return;
 
- 	glm::ivec3 pos(INT_MAX);
+	glm::ivec3 pos(INT_MAX);
 	for(const glm::ivec3 &i : chunkLoadingSet)
 		if(minDistanceCompare(i, pos))
 			pos = i;
-
 
 	chunkPtr chk = voxels.getChunk(pos);
 	setTerrain(chk);
 	chunkLoadedSet.insert(pos);
 	chunkLoadingSet.erase(pos);
-
 }
-void world::chunkMeshingThread()
+void world::chunkUpdateFunc()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
-	std::cout << "In Meshing Thread: " << std::this_thread::get_id() << std::endl;
-
-	if(chunkMeshingSet.empty())
+	if(chunkUpdateSet.empty())
 		return;
 
 	glm::ivec3 pos(INT_MAX);
-	for(const glm::ivec3 &i : chunkMeshingSet)
+	for(const glm::ivec3 &i : chunkUpdateSet)
 		if(minDistanceCompare(i, pos))
 			pos = i;
 
@@ -84,7 +81,7 @@ void world::chunkMeshingThread()
 	//chk->updateMeshing();
 	//printf("Updated: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 
-	chunkMeshingSet.erase(pos);
+	chunkUpdateSet.erase(pos);
 }
 void world::updateChunkLists()
 {
@@ -106,18 +103,19 @@ void world::updateChunkLists()
 					{
 						voxels.setChunk(i3);
 						chunkLoadingSet.insert(i3);
-						printf("Loaded: (%d, %d, %d)\n", i3.x, i3.y, i3.z);
+						//printf("Loaded: (%d, %d, %d)\n", i3.x, i3.y, i3.z);
 					}
 				}
-	for(auto i=voxels.chunks.begin();i!=voxels.chunks.end();)
+	auto i = voxels.chunks.begin();
+
+	while(i != voxels.chunks.end())
 	{
 		chunkPtr &chk=i->second;
 		glm::ivec3 pos=i->first;
 
 		if(!chk)//delete if the chunk is null
 		{
-			++i;
-			voxels.eraseChunk(pos);
+			i = voxels.chunks.erase(i);
 			continue;
 		}
 
@@ -128,9 +126,9 @@ void world::updateChunkLists()
 			//completely erase the chunk
 			voxels.eraseChunk(pos);
 			chunkLoadingSet.erase(pos);
-			chunkMeshingSet.erase(pos);
+			chunkUpdateSet.erase(pos);
 			chunkLoadedSet.erase(pos);
-			printf("Unloaded: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
+			//printf("Unloaded: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 			continue;
 		}
 
@@ -141,11 +139,7 @@ void world::updateChunkLists()
 		}
 
 		if(!chk->updatedMesh)
-		{
-			chunkMeshingSet.insert(pos);
-			//++i;
-			//continue;
-		}
+			chunkUpdateSet.insert(pos);
 		else if(!chk->meshData.empty())
 			renderer::applyChunkMesh(chk);
 
@@ -171,26 +165,12 @@ void world::updateChunkLists()
 
 	lastPlayerChunkPos = game::gamePlayer.chunkPos;
 
-	bgMtx.unlock();
+	if(!chunkUpdateSet.empty())
+		threadPool.enqueue(&world::chunkUpdateFunc, this);
 
 	if(!chunkLoadingSet.empty())
-	{
-		std::thread loadThr(&world::chunkLoadingThread, this);
-		loadThr.detach();
-	}
+		threadPool.enqueue(&world::chunkLoadingFunc, this);
 
-	if(!chunkMeshingSet.empty())
-	{
-		std::thread meshThr(&world::chunkMeshingThread, this);
-		meshThr.detach();
-	}
+	bgMtx.unlock();
 }
 
-void world::launchThreads()
-{
-
-}
-
-void world::quitThreads()
-{
-}

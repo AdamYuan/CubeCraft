@@ -1,6 +1,6 @@
 #include "resource.hpp"
 #include "settings.hpp"
-#include "opengl/texture.hpp"
+#include "MyGL/texture.hpp"
 #include <GL/glew.h>
 #include <iostream>
 #define SHADER_DIR std::string("resource/shader/")

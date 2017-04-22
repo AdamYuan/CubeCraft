@@ -94,7 +94,7 @@ void chunk::set(const glm::ivec3 &pos,const block &b)
 	set(pos.x,pos.y,pos.z,b);
 }
 
-void chunk::setl(int x,int y,int z,light_t v)
+void chunk::setl(int x, int y, int z, light_t v)
 {
 	if(!isValidPos(x, y, z))
 	{
@@ -152,15 +152,19 @@ void chunk::updateLighting()
 			{
 				if(!be_coverd[x][z] && get(x, y, z) != blocks::air)
 					be_coverd[x][z]=true;
-				bool n0 = x - 1 < 0 ? false : be_coverd[x-1][z];
-				bool n1 = x + 1 >= CHUNK_SIZE ? false : be_coverd[x+1][z];
-				bool n2 = z - 1 < 0 ? false : be_coverd[x][z-1];
-				bool n3 = z + 1 >= CHUNK_SIZE ? false : be_coverd[x][z+1];
-				if(!be_coverd[x][z] && (y-1 < 0 || (n0 || n1 || n2 || n3) ||
-						!block_m::isTransparent(get(x, y-1, z))))
+				if(be_coverd[x][z])
+					continue;
+				for(short f=0; f<6; ++f)
 				{
-					sunLightBfsQueue.push({{x,y,z}, 15});//add to light queue
-					setl(x, y, z, 15);//sun light
+					glm::ivec3 p = glm::ivec3(x, y, z) + funcs::getFaceDirect(f);
+					if(!isValidPos(p))
+						continue;
+					if(!block_m::isTransparent(get(p)) || be_coverd[p.x][p.z])
+					{
+						sunLightBfsQueue.push({{x, y, z}, 15});//add to light queue
+						setl(x, y, z, 15);//sun light
+						break;
+					}
 				}
 			}
 
@@ -171,14 +175,11 @@ void chunk::updateLighting()
 		light_t lightValue=node.light_value;
 		sunLightBfsQueue.pop();
 
-		if(lightValue<=0)
-			continue;
-
-		for(short face=0;face<6;++face)
+		for(short face=0; face<6; ++face)
 		{
 			glm::ivec3 np=glm::ivec3(x,y,z)+funcs::getFaceDirect(face);//new position
 
-			if (block_m::isTransparent(get(np)) && getl(np) + 2 <= lightValue)
+			if (block_m::isTransparent(get(np)) && getl(np) + 2 <= lightValue && lightValue > 0)
 			{
 				sunLightBfsQueue.push({np, (light_t)(lightValue-1)});
 				setl(np, (light_t) (lightValue - 1));

@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.6)
 project(CubeCraft)
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE Debug)
 
 set(CMAKE_CXX_STANDARD 11)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Ofast")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)

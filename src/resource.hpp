@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
-#include "opengl/object.hpp"
-#include "opengl/shader.hpp"
-#include "opengl/texture.hpp"
+#include "MyGL/object.hpp"
+#include "MyGL/shader.hpp"
+#include "MyGL/texture.hpp"
 #include "util.hpp"
 namespace resource
 {

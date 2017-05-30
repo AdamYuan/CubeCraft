@@ -11,7 +11,7 @@ ThreadPool pool(4);
 // enqueue and store future
 auto result = pool.enqueue([](int answer) { return answer; }, 42);
 
-// get result from future
-std::cout << result.get() << std::endl;
+// GetBlock result from future
+std::cout << result.GetBlock() << std::endl;
 
 ```

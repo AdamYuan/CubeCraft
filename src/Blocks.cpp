@@ -1,20 +1,20 @@
-#include "blocks.hpp"
+#include "Blocks.hpp"
 
 /*
-	air=0,
-	dirt=1,
-	grass=2,
-	stone=3,
-	water=4,
-	wood=5,
-	leaves=6,
-	sand=7
+	Air=0,
+	Dirt=1,
+	Grass=2,
+	Stone=3,
+	Water=4,
+	Wood=5,
+	Leaves=6,
+	Sand=7
 */
 unsigned block_textures[BLOCK_NUM][6]=
 		{
 				{0},
 				{0, 0, 0, 0, 0, 0},
-				{1, 1, 2, 0, 1, 1},//grass
+				{1, 1, 2, 0, 1, 1},//Grass
 				{3, 3, 3, 3, 3, 3},
 				{4, 4, 4, 4, 4, 4},
 				{5, 5, 6, 6, 5, 5},
@@ -34,17 +34,17 @@ bool block_transparents[BLOCK_NUM]=
 				false
 		};
 
-bool block_m::isTransparent(block b)
+bool BlockMethods::IsTransparent(block b)
 {
 	return block_transparents[b];
 }
 
-int block_m::getTexture(block b,short face)
+int BlockMethods::GetTexture(block b, short face)
 {
 	return block_textures[b][face];
 }
 
-box block_m::getBox(glm::ivec3 pos)
+Box BlockMethods::GetBox(glm::ivec3 pos)
 {
-	return box(pos,pos+1);
+	return Box(pos,pos+1);
 }

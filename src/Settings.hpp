@@ -1,8 +1,7 @@
 #pragma once
 #define DAEMON_DELAY 1 //ms
-#define BLOCK_TEX_NUM 9
 #define CHUNK_SIZE 32
-#define VIEW_DISTANCE 256 //blocks
+#define VIEW_DISTANCE 200 //blocks
 #define CHUNK_LOAD_DISTANCE 5 //chunks
 #define GRAVITY 3.0f //gravity
 #define JUMP_STEP 0.85f

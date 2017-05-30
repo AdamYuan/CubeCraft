@@ -1,53 +1,50 @@
 #include <chrono>
-#include "world.hpp"
-#include "game.hpp"
-#include "MyGL/matrix.hpp"
-#include "MyGL/camera.hpp"
-#include "MyGL/frustum.hpp"
-#include "renderer.hpp"
+#include "World.hpp"
+#include "Game.hpp"
+#include "Renderer.hpp"
 
-ThreadPool threadPool(4);
+ThreadPool threadPool(CHUNK_LOAD_DISTANCE * CHUNK_LOAD_DISTANCE * CHUNK_LOAD_DISTANCE);
 
 glm::ivec3 lastPlayerChunkPos((int) pow(CHUNK_LOAD_DISTANCE * 2 + 1, 3) * 2);
-bool world::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
+bool World::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 {
 	if(b.x == INT_MAX) return true;
-	float af = frustum::cubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	float bf = frustum::cubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	float al = glm::length((glm::vec3)(game::gamePlayer.chunkPos - a));
-	float bl = glm::length((glm::vec3)(game::gamePlayer.chunkPos - b));
+	float af = Game::frustum.CubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
+	float bf = Game::frustum.CubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
+	float al = glm::length((glm::vec3)(Game::player.ChunkPos - a));
+	float bl = glm::length((glm::vec3)(Game::player.ChunkPos - b));
 	return al/(af + 1.0f) < bl/(bf + 1.0f);
 }
-void world::initNoise()
+void World::InitNoise()
 {
 	fn.SetSeed(0);
 	fn.SetFrequency(0.005f);
 	fn.SetFractalOctaves(3);
 	fn.SetNoiseType(FastNoise::NoiseType::SimplexFractal);
 }
-void world::setTerrain(chunkPtr chk)
+void World::setTerrain(ChunkPtr chk)
 {
 	for (int i = 0; i < CHUNK_SIZE; ++i)
 		for (int k = 0; k < CHUNK_SIZE; ++k) {
 			block current = fn.GetNoise(
-					chk->chunkPos.x*CHUNK_SIZE + i,
-					chk->chunkPos.y*CHUNK_SIZE + CHUNK_SIZE,
-					chk->chunkPos.z*CHUNK_SIZE + k) >= 0.1 ?
-							blocks::stone : blocks::grass;
+					chk->ChunkPos.x*CHUNK_SIZE + i,
+					chk->ChunkPos.y*CHUNK_SIZE + CHUNK_SIZE,
+					chk->ChunkPos.z*CHUNK_SIZE + k) >= 0.1 ?
+							Blocks::Stone : Blocks::Grass;
 			for (int j = CHUNK_SIZE; j--;) {
 				if (fn.GetNoise(
-						chk->chunkPos.x*CHUNK_SIZE + i,
-						chk->chunkPos.y*CHUNK_SIZE + j,
-						chk->chunkPos.z*CHUNK_SIZE + k) >= 0.1) {
-					chk->set(i, j, k, current);
-					current = blocks::stone;
+						chk->ChunkPos.x*CHUNK_SIZE + i,
+						chk->ChunkPos.y*CHUNK_SIZE + j,
+						chk->ChunkPos.z*CHUNK_SIZE + k) >= 0.1) {
+					chk->SetBlock(i, j, k, current);
+					current = Blocks::Stone;
 				}
 				else
-					current = blocks::grass;
+					current = Blocks::Grass;
 			}
 		}
 }
-void world::chunkLoadingFunc()
+void World::chunkLoadingFunc()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
 
@@ -59,12 +56,12 @@ void world::chunkLoadingFunc()
 		if(minDistanceCompare(i, pos))
 			pos = i;
 
-	chunkPtr chk = voxels.getChunk(pos);
+	ChunkPtr chk = Voxels.GetChunk(pos);
 	setTerrain(chk);
 	chunkLoadedSet.insert(pos);
 	chunkLoadingSet.erase(pos);
 }
-void world::chunkUpdateFunc()
+void World::chunkUpdateFunc()
 {
 	std::lock_guard<std::mutex> lk(bgMtx);
 	if(chunkUpdateSet.empty())
@@ -75,47 +72,46 @@ void world::chunkUpdateFunc()
 		if(minDistanceCompare(i, pos))
 			pos = i;
 
-	chunkPtr chk = voxels.getChunk(pos);
+	Voxels.GetChunk(pos)->UpdateAll();
 
-	chk->updateAll();
-	//chk->updateMeshing();
+	//chk->UpdateMeshing();
 	//printf("Updated: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 
 	chunkUpdateSet.erase(pos);
 }
-void world::updateChunkLists()
+void World::UpdateChunkLists()
 {
 	if(!bgMtx.try_lock())
 		return;
 
-	chunkRenderList.clear();
-	glm::ivec3 minLoadRange = game::gamePlayer.chunkPos
+	ChunkRenderList.clear();
+	glm::ivec3 minLoadRange = Game::player.ChunkPos
 							  - CHUNK_LOAD_DISTANCE;
-	glm::ivec3 maxLoadRange = game::gamePlayer.chunkPos
+	glm::ivec3 maxLoadRange = Game::player.ChunkPos
 							  + CHUNK_LOAD_DISTANCE;
 	glm::ivec3 i3;
-	if(game::gamePlayer.chunkPos != lastPlayerChunkPos)
+	if(Game::player.ChunkPos != lastPlayerChunkPos)
 		for(i3.x = minLoadRange.x; i3.x <= maxLoadRange.x; ++i3.x)
 			for(i3.y = minLoadRange.y; i3.y <= maxLoadRange.y; ++i3.y)
 				for(i3.z = minLoadRange.z; i3.z <= maxLoadRange.z; ++i3.z)
 				{
 					if(!chunkLoadingSet.count(i3) && !chunkLoadedSet.count(i3))
 					{
-						voxels.setChunk(i3);
+						Voxels.SetChunk(i3);
 						chunkLoadingSet.insert(i3);
 						//printf("Loaded: (%d, %d, %d)\n", i3.x, i3.y, i3.z);
 					}
 				}
-	auto i = voxels.chunks.begin();
+	auto i = Voxels.Chunks.begin();
 
-	while(i != voxels.chunks.end())
+	while(i != Voxels.Chunks.end())
 	{
-		chunkPtr &chk=i->second;
+		ChunkPtr &chk=i->second;
 		glm::ivec3 pos=i->first;
 
 		if(!chk)//delete if the chunk is null
 		{
-			i = voxels.chunks.erase(i);
+			i = Voxels.Chunks.erase(i);
 			continue;
 		}
 
@@ -124,7 +120,7 @@ void world::updateChunkLists()
 		{// chunk is out of loading range
 			++i;
 			//completely erase the chunk
-			voxels.eraseChunk(pos);
+			Voxels.EraseChunk(pos);
 			chunkLoadingSet.erase(pos);
 			chunkUpdateSet.erase(pos);
 			chunkLoadedSet.erase(pos);
@@ -138,12 +134,12 @@ void world::updateChunkLists()
 			continue;
 		}
 
-		if(!chk->updatedMesh)
+		if(!chk->UpdatedMesh)
 			chunkUpdateSet.insert(pos);
-		else if(!chk->meshData.empty())
-			renderer::applyChunkMesh(chk);
+		else if(!chk->MeshData.empty())
+			Renderer::ApplyChunkMesh(chk);
 
-		if(chk->obj.elements==0)//don't render if there weren't any thing
+		if(chk->MeshObject.Empty())//don't Render if there weren't any thing
 		{
 			++i;
 			continue;
@@ -151,25 +147,25 @@ void world::updateChunkLists()
 
 		glm::vec3 center=(glm::vec3) pos*(float)CHUNK_SIZE+glm::vec3(CHUNK_SIZE/2);
 
-		//Cull far away chunks
-		if(glm::distance(camera::position,center) > VIEW_DISTANCE+CHUNK_SIZE)
+		//Cull far away Chunks
+		if(glm::distance(Game::camera.Position, center) > VIEW_DISTANCE+CHUNK_SIZE)
 		{
 			++i;
 			continue;
 		}
 
-		chunkRenderList.push_back(pos);
+		ChunkRenderList.push_back(pos);
 
 		++i;
 	}
 
-	lastPlayerChunkPos = game::gamePlayer.chunkPos;
+	lastPlayerChunkPos = Game::player.ChunkPos;
 
 	if(!chunkUpdateSet.empty())
-		threadPool.enqueue(&world::chunkUpdateFunc, this);
+		threadPool.enqueue(&World::chunkUpdateFunc, this);
 
 	if(!chunkLoadingSet.empty())
-		threadPool.enqueue(&world::chunkLoadingFunc, this);
+		threadPool.enqueue(&World::chunkLoadingFunc, this);
 
 	bgMtx.unlock();
 }

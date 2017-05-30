@@ -82,7 +82,7 @@ public:
 	void SetFractalType(FractalType fractalType) { m_fractalType = fractalType; }
 
 	// Sets return type from cellular noise calculations
-	// Note: NoiseLookup requires another FastNoise object be set with SetCellularNoiseLookup() to function
+	// Note: NoiseLookup requires another FastNoise object be SetBlock with SetCellularNoiseLookup() to function
 	// Default: CellValue
 	void SetCellularDistanceFunction(CellularDistanceFunction cellularDistanceFunction) { m_cellularDistanceFunction = cellularDistanceFunction; }
 	

@@ -1,8 +1,8 @@
 #version 330 core
 layout(location=0) in vec4 position;
-layout(location=1) in float tex;
-layout(location=2) in float face;
-layout(location=3) in vec2 lighting;
+layout(location=2) in float tex;
+layout(location=3) in float face;
+layout(location=4) in vec2 lighting;
 uniform mat4 matrix;
 out float frag_face;
 out float frag_tex;

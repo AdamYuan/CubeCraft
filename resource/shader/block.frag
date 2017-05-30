@@ -7,7 +7,7 @@ in float frag_light;
 out vec4 color;
 uniform sampler2DArray sampler;
 uniform vec3 camera;
-uniform float viewdis;
+uniform float viewDistance;
 
 float fog_factor;
 float fog_height;
@@ -37,7 +37,7 @@ void main()
 	//fog
 	vec4 sky_color=vec4(0.6, 0.8, 1.0, 1.0);
 	float camera_distance = distance(camera, pos);
-	fog_factor = pow(clamp(camera_distance / viewdis, 0.0, 1.0), 4.0);
+	fog_factor = pow(clamp(camera_distance / viewDistance, 0.0, 1.0), 4.0);
 	float dy = pos.y - camera.y;
 	float dx = distance(pos.xz, camera.xz);
 	fog_height = (atan(dy, dx) + pi / 2) / pi;

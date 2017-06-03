@@ -1,12 +1,15 @@
 #pragma once
 #include <vector>
+#include <iostream>
 #include <GL/glew.h>
 namespace MyGL
 {
 	class VertexObject
 	{
 	private:
-		GLuint VAO, VBO, elements, dataNum;
+		bool inited = false;
+		GLuint VAO, VBO;
+		int Elements, DataNum, AttributesLength;
 		void init();
 		void clear();
 		void beginRecord();
@@ -28,19 +31,23 @@ namespace MyGL
 	template<class T>
 	void VertexObject::SetDataVec(std::vector<T> vec)
 	{
-		if(vec.empty())
+		if(vec.empty()) {
+			DataNum = 0;
 			return;
+		}
 		beginRecord();
 		glBufferData(GL_ARRAY_BUFFER, vec.size() * sizeof(T), &vec[0], GL_STATIC_DRAW);
-		dataNum = (GLuint) (vec.size() * (sizeof(T) / sizeof(float)));
+		DataNum = (int) (vec.size() * (sizeof(T) / sizeof(float)));
 	}
 	template<class T>
 	void VertexObject::SetDataArr(const T *array, int arrSize)
 	{
-		if(arrSize==0)
+		if(arrSize==0) {
+			DataNum = 0;
 			return;
+		}
 		beginRecord();
-		glBufferData(GL_ARRAY_BUFFER,arrSize*sizeof(T),array,GL_STATIC_DRAW);
-		dataNum = arrSize*(sizeof(T)/sizeof(float));
+		glBufferData(GL_ARRAY_BUFFER, arrSize*sizeof(T), array, GL_STATIC_DRAW);
+		DataNum = arrSize * (sizeof(T) / sizeof(float));
 	}
 }

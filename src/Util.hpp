@@ -74,14 +74,18 @@ struct FaceLighting
 enum{RIGHT=0,LEFT,TOP,BOTTOM,FRONT,BACK};
 namespace Funcs
 {
-extern bool Intersect(Box a, Box b, bool touchForTrue = false);
-extern glm::ivec3 GetFaceDirect(short face);
-template <typename T>
-inline int Sign(T val)
-{
-    return (T(0) < val) - (val < T(0));
-}
-
+	extern bool Intersect(Box a, Box b, bool touchForTrue = false);
+	extern glm::ivec3 GetFaceDirect(short face);
+	template <typename T>
+	inline int Sign(T val)
+	{
+		return (T(0) < val) - (val < T(0));
+	}
+	template <typename T>
+	inline std::string Vec3ToString(glm::tvec3<T> vec)
+	{
+		return "(x = " + std::to_string(vec.x) + ", y = " + std::to_string(vec.y) + ", z = " + std::to_string(vec.z) + ")";
+	}
 };
 
 extern glm::ivec3 fdirects[];

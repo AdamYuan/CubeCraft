@@ -90,7 +90,7 @@ namespace Game
 
 			if((int)glfwGetTime() != last)
 			{
-				FpsInfo = "fps:" + std::to_string(frameRateManager.GetFps());
+				FpsInfo = "FPS:" + std::to_string(frameRateManager.GetFps());
 				last = (int)glfwGetTime();
 			}
 			if(control)
@@ -174,7 +174,7 @@ namespace Game
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		Renderer::RenderCross();
-		std::string PositionInfo=" pos:(" + std::to_string(camera.Position.x) + "," +
+		std::string PositionInfo=" Position:(" + std::to_string(camera.Position.x) + "," +
 							 std::to_string(camera.Position.y) + "," +
 							 std::to_string(camera.Position.z) + ")";
 		Renderer::RenderText(glm::vec2(0), FpsInfo + PositionInfo, 10, 20,

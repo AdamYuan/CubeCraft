@@ -1,5 +1,5 @@
 #include "Resource.hpp"
-#include "Settings.hpp"
+#include "Blocks.hpp"
 #include <iostream>
 #define SHADER_DIR std::string("resource/shader/")
 #define TEXTURE_DIR std::string("resource/texture/")
@@ -45,7 +45,6 @@ namespace Resource
 
 		//Init block texture
 		BlockTexture.Load2dArray(TEXTURE_DIR + "blocks.png", BLOCK_TEX_NUM);
-		//BlockTexture.BuildMipmap();
 		BlockTexture.SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
 
 		//Init font textures

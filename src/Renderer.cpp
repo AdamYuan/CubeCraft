@@ -5,15 +5,12 @@
 //update the vertex mesh of a chunk
 void Renderer::ApplyChunkMesh(ChunkPtr chk) {
 	//add the data array into the VAO,VBO
-	chk->MeshObject.SetDataVec(chk->MeshData);
-	chk->MeshObject.SetAttributes(4,
-						Resource::Attributes::Position, 3,
-						Resource::Attributes::BTexture, 1,
-						Resource::Attributes::BFacing, 1,
-						Resource::Attributes::BLighting, 2);
-
-	chk->MeshData.clear();
-	chk->MeshData.shrink_to_fit();
+	chk->MeshObject->SetDataVec(chk->MeshData);
+	chk->MeshObject->SetAttributes(4,
+								  Resource::Attributes::Position, 3,
+								  Resource::Attributes::BTexture, 1,
+								  Resource::Attributes::BFacing, 1,
+								  Resource::Attributes::BLighting, 2);
 }
 
 void Renderer::RenderWorld(World *wld) {
@@ -37,7 +34,9 @@ void Renderer::RenderWorld(World *wld) {
 		//Frustum Culling
 		if (!Game::frustum.CubeInFrustum(center, CHUNK_SIZE / 2))
 			continue;
-		wld->Voxels.GetChunk(pos)->MeshObject.Render(GL_TRIANGLES);
+
+		//std::cout << Funcs::Vec3ToString(pos) << std::endl;
+		wld->Voxels.GetChunk(pos)->MeshObject->Render(GL_TRIANGLES);
 	}
 }
 

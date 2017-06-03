@@ -4,6 +4,8 @@ namespace MyGL
 {
 	void VertexObject::init()
 	{
+		Elements = 0, DataNum = 0;
+		inited = true;
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 	}
@@ -18,7 +20,8 @@ namespace MyGL
 	}
 	void VertexObject::beginRecord()
 	{
-		init();
+		if(!inited)
+			init();
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	}
@@ -31,40 +34,43 @@ namespace MyGL
 	{
 		va_list vl;
 		int sum=0;
-		GLuint attribs[attr_count][2];
+		GLuint attributes[attr_count][2];
 		va_start(vl, attr_count);
 		for(int i=0;i<attr_count;++i)
 		{
 			GLuint attr_id=va_arg(vl, GLuint);
 			unsigned size=va_arg(vl, unsigned);
 			sum+=size;
-			attribs[i][0]=attr_id;
-			attribs[i][1]=size;
+			attributes[i][0]=attr_id;
+			attributes[i][1]=size;
 		}
 		va_end(vl);
-		int now=0;
+		AttributesLength=0;
 		for(int i=0;i<attr_count;++i)
 		{
-			GLuint attr_id=attribs[i][0];
-			int size=attribs[i][1];
+			GLuint attr_id=attributes[i][0];
+			int size=attributes[i][1];
 			glVertexAttribPointer(attr_id, size, GL_FLOAT, GL_FALSE,
-								  sum*sizeof(float), (void*)(now*sizeof(float)));
+								  sum*sizeof(float), (void*)(AttributesLength*sizeof(float)));
 			glEnableVertexAttribArray(attr_id);
-			now+=size;
+			AttributesLength+=size;
 		}
-		elements=dataNum/now;
-
 		endRecord();
+
+		Elements = DataNum / AttributesLength;
+
 	}
 	void VertexObject::Render(GLenum mode)
 	{
+		if(Empty())
+			return;
 		glBindVertexArray(VAO);
-		glDrawArrays(mode, 0, elements);
+		glDrawArrays(mode, 0, Elements);
 		glBindVertexArray(0);
 	}
 
 	bool VertexObject::Empty() const
 	{
-		return elements == 0;
+		return Elements == 0;
 	}
 }

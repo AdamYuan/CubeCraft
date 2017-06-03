@@ -4,7 +4,7 @@
 #include "Blocks.hpp"
 #include "Settings.hpp"
 #include <vector>
-#include <atomic>
+#include <memory>
 
 class SuperChunk;
 class Chunk
@@ -20,6 +20,7 @@ public:
 	std::vector<vert_block> MeshData;
 	glm::ivec3 ChunkPos;
 	std::string ChunkLabel;
+	bool LoadedTerrain = false;
 
 	Chunk(SuperChunk *_parent,glm::ivec3 _chunkPos,std::string _chunkLabel);
 	~Chunk();
@@ -46,5 +47,5 @@ public:
 	bool UpdatedMesh=false;
 	bool UpdatedLight=false;
 
-	MyGL::VertexObject MeshObject;
+	std::unique_ptr<MyGL::VertexObject> MeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
 };

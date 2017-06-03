@@ -135,27 +135,26 @@ void Chunk::UpdateLighting()
 
 	std::uninitialized_fill(&beCovered[0][0], &beCovered[CHUNK_SIZE-1][CHUNK_SIZE-1]+1, false);
 
-	for(int i=1; ; ++i)
+	ChunkPtr up_chk= parent->GetChunk(ChunkPos.x, ChunkPos.y + 1, ChunkPos.z);
+	if(up_chk)
 	{
-		ChunkPtr up_chk= parent->GetChunk(ChunkPos.x, ChunkPos.y + i, ChunkPos.z);
-		if(!up_chk)
-			break;
 		for(int x=0;x<CHUNK_SIZE;++x)
 			for(int y=0;y<CHUNK_SIZE;++y)
-				if(!beCovered[x][y] && up_chk->beCoverd[x][y])
-					beCovered[x][y]=true;
+				beCovered[x][y]=up_chk->beCoverd[x][y];
 	}
 
 	for(int y=CHUNK_SIZE-1; y>=0; --y)
 		for(int x=0; x<CHUNK_SIZE; ++x)
 			for(int z=0; z<CHUNK_SIZE; ++z)
 			{
-				if(!beCovered[x][z] && GetBlock(x, y, z) != Blocks::Air)
+				if(GetBlock(x, y, z) != Blocks::Air)
 					beCovered[x][z]=true;
-				if(beCovered[x][z])
-					continue;
-				sunLightBfsQueue.push({{x, y, z}, 15});//add to Light queue
-				SetLight(x, y, z, 15);//sun Light
+
+				if(!beCovered[x][z] && GetBlock(x, y, z) == Blocks::Air)
+				{
+					sunLightBfsQueue.push({{x, y, z}, 15});//add to Light queue
+					SetLight(x, y, z, 15);//sun Light
+				}
 			}
 
 	while(!sunLightBfsQueue.empty())
@@ -225,10 +224,10 @@ void Chunk::UpdateMeshing()
 		int index=0;
 		glm::ivec3 n;
 		bool first_face=false;
-		for(short face=0;face<6;++face)
+		for(short face=0; face<6; ++face)
 		{
-			block bn= GetBlock(posi),bf= GetBlock(posi + Funcs::GetFaceDirect(face));
-			bool trans_n= BlockMethods::IsTransparent(bn),trans_f= BlockMethods::IsTransparent(bf);
+			block bn = GetBlock(posi), bf = GetBlock(posi + Funcs::GetFaceDirect(face));
+			bool trans_n= BlockMethods::IsTransparent(bn), trans_f= BlockMethods::IsTransparent(bf);
 			if(!trans_n && !trans_f)
 				continue;
 			if(trans_n && bf!=Blocks::Air)
@@ -236,9 +235,9 @@ void Chunk::UpdateMeshing()
 
 			if(!first_face)//calculate the neighbours only for once
 			{
-				for(n.x=-1;n.x<=1;++n.x)
-					for(n.y=-1;n.y<=1;++n.y)
-						for(n.z=-1;n.z<=1;++n.z,++index)
+				for(n.x=-1; n.x<=1; ++n.x)
+					for(n.y=-1; n.y<=1; ++n.y)
+						for(n.z=-1; n.z<=1; ++n.z, ++index)
 						{
 							neighbours[index]= GetBlock(posi + n);
 							neighbours_li[index]= GetLight(posi + n);
@@ -246,25 +245,30 @@ void Chunk::UpdateMeshing()
 				first_face=true;
 			}
 
-			for(int v=0; v<4; ++v)
+			for(int vertex=0; vertex<4; ++vertex)
 			{
-				block_lightings[Chunk::GetNumFromPos(posi)][face].AO[v]=
-						vertexAO(neighbours[lookup3[face][v][0]],
-								 neighbours[lookup3[face][v][1]],
-								 neighbours[lookup3[face][v][2]]);
+				block_lightings[Chunk::GetNumFromPos(posi)][face].AO[vertex]=
+						vertexAO(neighbours[lookup3[face][vertex][0]],
+								 neighbours[lookup3[face][vertex][1]],
+								 neighbours[lookup3[face][vertex][2]]);
 
-				light_t center_l= GetLight(posi + Funcs::GetFaceDirect(face));
+				light_t center_l = GetLight(posi + Funcs::GetFaceDirect(face));
 
 				//smooth the Light using the average value
 				int sum=1, sum_li=center_l;
+				bool isSolid[3];
 				for(int nn=0; nn<3; ++nn)
-				{
-					if(!BlockMethods::IsTransparent(neighbours[lookup3[face][v][nn]]))
-						continue;
-					sum++;
-					sum_li+=neighbours_li[lookup3[face][v][nn]];
-				}
-				block_lightings[Chunk::GetNumFromPos(posi)][face].Light[v]= (light_t) (sum_li / sum);
+					isSolid[nn] = !BlockMethods::IsTransparent(neighbours[lookup3[face][vertex][nn]]);
+
+				if(!isSolid[0] || !isSolid[2])
+					for(int nn=0; nn<3; ++nn)
+					{
+						if(isSolid[nn])
+							continue;
+						sum++;
+						sum_li+=neighbours_li[lookup3[face][vertex][nn]];
+					}
+				block_lightings[Chunk::GetNumFromPos(posi)][face].Light[vertex]= (light_t) (sum_li / sum);
 			}
 		}
 	}
@@ -276,9 +280,17 @@ void Chunk::UpdateMeshing()
 		const std::size_t v = (axis + 2) % 3;
 
 		int x[3] = {0}, q[3] = {0}, mask[CHUNK_SIZE*CHUNK_SIZE];
-		FaceLighting lightmask[CHUNK_SIZE*CHUNK_SIZE];
+		FaceLighting lightMask[CHUNK_SIZE*CHUNK_SIZE];
 		// Compute mask
 		q[axis] = 1;
+		ChunkPtr neighbourChunk0 = parent->GetChunk(ChunkPos - glm::ivec3(q[0], q[1], q[2])),
+				neighbourChunk1 = parent->GetChunk(ChunkPos + glm::ivec3(q[0], q[1], q[2]));
+		bool neighbourChunkExist0 = neighbourChunk0 != nullptr;
+		if(neighbourChunkExist0)
+			neighbourChunkExist0 = neighbourChunk0->LoadedTerrain;
+		bool neighbourChunkExist1 = neighbourChunk1 != nullptr;
+		if(neighbourChunkExist1)
+			neighbourChunkExist1 = neighbourChunk1->LoadedTerrain;
 		for (x[axis] = -1; x[axis] < CHUNK_SIZE;)
 		{
 			std::size_t counter = 0;
@@ -292,7 +304,7 @@ void Chunk::UpdateMeshing()
 							GetBlock(x[0] + q[0], x[1] + q[1], x[2] + q[2])
 					/*: 0*/;
 
-					const bool canput_a=(0<=x[axis]);
+					const bool canput_a=(0 <= x[axis]);
 					const bool canput_b=(x[axis] < CHUNK_SIZE-1);
 
 					const bool trans_a = BlockMethods::IsTransparent(a);
@@ -302,35 +314,40 @@ void Chunk::UpdateMeshing()
 					const int index_b=(x[0]+q[0])+CHUNK_SIZE*((x[1]+q[1])+CHUNK_SIZE*(x[2]+q[2]));
 
 					const FaceLighting li_a=(0<=x[axis])?
-											 block_lightings[index_a][axis*2]
-														 :FaceLighting();
+											block_lightings[index_a][axis*2]
+														:FaceLighting();
 					const FaceLighting li_b=(x[axis] < CHUNK_SIZE - 1)?
-											 block_lightings[index_b][axis*2+1]
-																	   :FaceLighting();
-					if(!trans_a && trans_b && canput_a)//soild block surface
+											block_lightings[index_b][axis*2+1]
+																	  :FaceLighting();
+					if((x[axis] == -1 && !neighbourChunkExist0) || (x[axis] + 1 == CHUNK_SIZE && !neighbourChunkExist1))
+					{
+						mask[counter] = 0;
+						lightMask[counter] = FaceLighting();
+					}
+					else if(!trans_a && trans_b && canput_a)//soild block surface
 					{
 						mask[counter] = a;
-						lightmask[counter] = li_a;
+						lightMask[counter] = li_a;
 					}
 					else if(!trans_b && trans_a && canput_b)
 					{
 						mask[counter] = -b;
-						lightmask[counter] = li_b;
+						lightMask[counter] = li_b;
 					}
 					else if(trans_a && !b && canput_a)//transparent block surface
 					{
 						mask[counter] = a;
-						lightmask[counter] = li_a;
+						lightMask[counter] = li_a;
 					}
 					else if(trans_b && !a && canput_b)
 					{
 						mask[counter] = -b;
-						lightmask[counter] = li_b;
+						lightMask[counter] = li_b;
 					}
 					else
 					{
 						mask[counter] = 0;
-						lightmask[counter] = FaceLighting();
+						lightMask[counter] = FaceLighting();
 					}
 				}
 
@@ -344,11 +361,11 @@ void Chunk::UpdateMeshing()
 				for (std::size_t i = 0; i < CHUNK_SIZE;)
 				{
 					int c = mask[counter];
-					FaceLighting fli = lightmask[counter];
+					FaceLighting fli = lightMask[counter];
 					if (c)
 					{
 						// Compute Width
-						for (width = 1; c == mask[counter + width] && fli == lightmask[counter + width] &&
+						for (width = 1; c == mask[counter + width] && fli == lightMask[counter + width] &&
 										i + width < CHUNK_SIZE; ++width);
 
 						// Compute Height
@@ -357,7 +374,7 @@ void Chunk::UpdateMeshing()
 						{
 							for (std::size_t k = 0; k < width; ++k)
 								if (c != mask[counter + k + height * CHUNK_SIZE] ||
-									fli != lightmask[counter + k + height * CHUNK_SIZE])
+									fli != lightMask[counter + k + height * CHUNK_SIZE])
 								{
 									done = true;
 									break;
@@ -401,13 +418,13 @@ void Chunk::UpdateMeshing()
 						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2],
 										(float)tex,(float)f,(float)fli.AO[3],(float)fli.Light[3]};
 
-						bool flip=(fli.AO[0]==fli.AO[1] && fli.AO[1]==fli.AO[2] && fli.AO[2]==fli.AO[3])?
+						/*bool flip=(fli.AO[0]==fli.AO[1] && fli.AO[1]==fli.AO[2] && fli.AO[2]==fli.AO[3])?
 								  (fli.Light[0]+fli.Light[2] > fli.Light[1]+fli.Light[3]):
-								  (fli.AO[0]+fli.AO[2] > fli.AO[1]+fli.AO[3]);
-						//bool flip=(fli.Ao[0]+fli.Ao[2] > fli.Ao[1]+fli.Ao[3]);
+								  (fli.AO[0]+fli.AO[2] > fli.AO[1]+fli.AO[3]);*/
+						bool flip=(fli.AO[0]+fli.AO[2] > fli.AO[1]+fli.AO[3]);
 
-						//bool flip=(fli.Ao[0]+fli.Light[0]+fli.Ao[2]+fli.Light[2] >
-						//		   fli.Ao[1]+fli.Light[1]+fli.Ao[3]+fli.Light[3]);
+						//bool flip=(fli.AO[0]+fli.Light[0]+fli.AO[2]+fli.Light[2] >
+						//		   fli.AO[1]+fli.Light[1]+fli.AO[3]+fli.Light[3]);
 						if(flip)
 						{
 							//11--------10

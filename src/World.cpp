@@ -24,6 +24,25 @@ void World::InitNoise()
 }
 void World::setTerrain(ChunkPtr chk)
 {
+	chk->LoadedTerrain = true;
+	for(int i=0; i<CHUNK_SIZE; ++i)
+		for(int j=0; j<CHUNK_SIZE; ++j)
+		{
+			int k = (int) std::round(fn.GetNoise(
+					chk->ChunkPos.x * CHUNK_SIZE + i,
+					chk->ChunkPos.z * CHUNK_SIZE + j) * 100) - 32;
+			int cy = (k+(k<0))/CHUNK_SIZE-(k<0);
+			if(cy == chk->ChunkPos.y) {
+				int gy = k - (cy * CHUNK_SIZE);
+				chk->SetBlock(i, gy, j, Blocks::Grass);
+				for(int y=0; y < gy; ++y)
+					chk->SetBlock(i, y, j, Blocks::Stone);
+			}
+			else if(chk->ChunkPos.y < cy)
+				for(int y=0; y < CHUNK_SIZE; ++y)
+					chk->SetBlock(i, y, j, Blocks::Stone);
+		}
+	/*
 	for (int i = 0; i < CHUNK_SIZE; ++i)
 		for (int k = 0; k < CHUNK_SIZE; ++k) {
 			block current = fn.GetNoise(
@@ -43,6 +62,7 @@ void World::setTerrain(ChunkPtr chk)
 					current = Blocks::Grass;
 			}
 		}
+	 */
 }
 void World::chunkLoadingFunc()
 {
@@ -137,9 +157,14 @@ void World::UpdateChunkLists()
 		if(!chk->UpdatedMesh)
 			chunkUpdateSet.insert(pos);
 		else if(!chk->MeshData.empty())
+		{
 			Renderer::ApplyChunkMesh(chk);
 
-		if(chk->MeshObject.Empty())//don't Render if there weren't any thing
+			chk->MeshData.clear();
+			chk->MeshData.shrink_to_fit();
+		}
+
+		if(chk->MeshObject->Empty())//don't Render if there weren't any thing
 		{
 			++i;
 			continue;

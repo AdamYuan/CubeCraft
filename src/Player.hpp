@@ -3,7 +3,7 @@
 class Player
 {
 private:
-	Box playerBox=Box(glm::vec3(-0.3f,-1.6f,-0.3f), glm::vec3(0.3f));
+	Box playerBox=Box(glm::vec3(-0.3f, -1.6f, -0.3f), glm::vec3(0.3f));
 	//if Player hit the world, then return true
 	bool hitTest(short face,bool doAction);//face is the world face to collision by the Player
 	bool _moveForward(float dist,int degree);

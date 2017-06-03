@@ -172,7 +172,6 @@ void Player::Jump()
 	{
 		lastGravityTime = glfwGetTime();
 		jumping=true;
-		last_pos=Position;
 	}
 }
 

@@ -12,9 +12,8 @@ class Chunk
 private:
 	block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	light_t lightMap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
-	bool beCoverd[CHUNK_SIZE][CHUNK_SIZE];
+	bool beCovered[CHUNK_SIZE*CHUNK_SIZE];
 	bool updatedNeighbourMeshing[6];
-	bool updatedNeighbourLighting[6];
 	SuperChunk *parent;
 public:
 	std::vector<vert_block> MeshData;
@@ -26,8 +25,8 @@ public:
 	~Chunk();
 	static bool IsValidPos(int x, int y, int z);
 	static bool IsValidPos(const glm::ivec3 &pos);
-	static int GetNumFromPos(int x, int y, int z);
-	static int GetNumFromPos(const glm::ivec3 &pos);
+	static int XYZ(int x, int y, int z);
+	static int XYZ3(const glm::ivec3 &pos);
 	static glm::ivec3 GetPosFromNum(int num);
 
 	void SetBlock(const glm::ivec3 &pos, const block &b);

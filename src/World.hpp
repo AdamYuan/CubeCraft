@@ -6,7 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 #include "ThreadPool/ThreadPool.h"
-#include "FastNoise/FastNoise.h"
+#include "FastNoiseSIMD/FastNoiseSIMD.h"
 #include "Util.hpp"
 
 class World
@@ -23,7 +23,7 @@ private:
 	std::set<glm::ivec3, Ivec3Compare> chunkUpdateSet;
 
 	std::mutex bgMtx;
-	FastNoise fn;
+	FastNoiseSIMD *fastNoise;
 public:
 	SuperChunk Voxels;
 

@@ -1,4 +1,8 @@
 #pragma once
+
+#define MOVE_DIST 4.0f
+#define ROTATE_DIST 0.3f
+
 #define DAEMON_DELAY 1 //ms
 #define CHUNK_SIZE 32
 #define VIEW_DISTANCE 200 //blocks

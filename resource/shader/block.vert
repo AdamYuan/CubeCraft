@@ -10,7 +10,7 @@ out float frag_ao;
 out float frag_light;
 out vec3 pos;
 
-const float AOcurve[4] = float[4](0.55, 0.7, 0.85, 1.0);
+const float AOcurve[4] = float[4](0.74, 0.84, 0.94, 1.0);
 
 void main()
 {

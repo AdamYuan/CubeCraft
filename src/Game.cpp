@@ -1,8 +1,6 @@
 #include "Game.hpp"
+#include "Settings.hpp"
 #include "Renderer.hpp"
-
-#define MOVE_DIST 1.8f
-#define ROTATE_DIST 0.3f
 
 namespace Game
 {

@@ -98,7 +98,7 @@ bool Player::isFloating(float delta=2*HITTEST_DELTA)
 
 bool Player::_moveForward(float dist, int degree)
 {
-	if(std::fabs(dist)>1.0f)//deal with fast movement
+	if(PHYSICS && std::fabs(dist)>1.0f)//deal with fast movement
 	{
 		bool return_v=false;
 
@@ -121,12 +121,12 @@ bool Player::_moveForward(float dist, int degree)
 	glm::vec3 lastPos = Position;
 
 	Position.x -= std::sin(rad) * dist;
-	if(Position.x - lastPos.x != 0)
+	if(PHYSICS && Position.x - lastPos.x != 0)
 		if(hitTest(Position.x-lastPos.x>0?LEFT:RIGHT))
 			return_v=true;
 
 	Position.z -= std::cos(rad) * dist;
-	if(Position.z-lastPos.z != 0)
+	if(PHYSICS && Position.z-lastPos.z != 0)
 		if(hitTest(Position.z-lastPos.z>0?BACK:FRONT))
 			return_v=true;
 
@@ -135,7 +135,7 @@ bool Player::_moveForward(float dist, int degree)
 
 bool Player::_moveUp(float dist)
 {
-	if(std::fabs(dist)>1.0f)//deal with fast movement
+	if(PHYSICS && std::fabs(dist)>1.0f)//deal with fast movement
 	{
 		bool return_v=false;
 
@@ -154,7 +154,9 @@ bool Player::_moveUp(float dist)
 	}
 
 	Position.y+=dist;
-	return hitTest(dist>0?BOTTOM:TOP);
+	if(PHYSICS)
+		return hitTest(dist>0?BOTTOM:TOP);
+	return false;
 }
 
 bool Player::MoveForward(float dist, int degree)

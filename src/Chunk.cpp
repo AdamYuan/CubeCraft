@@ -8,18 +8,14 @@
 #include "Chunk.hpp"
 #include "SuperChunk.hpp"
 #include "Resource.hpp"
-using namespace std;
 Chunk::Chunk(SuperChunk *_parent,glm::ivec3 _chunkPos,std::string _chunkLabel)
 		:parent(_parent),ChunkPos(_chunkPos),ChunkLabel(_chunkLabel)
 {
-	std::uninitialized_fill(&beCoverd[0][0], &beCoverd[CHUNK_SIZE-1][CHUNK_SIZE-1]+1, false);
-	std::uninitialized_fill(begin(blk), end(blk), Blocks::Air);
-	std::uninitialized_fill(begin(lightMap), end(lightMap), 0);
+	std::uninitialized_fill(std::begin(beCovered), std::end(beCovered), false);
+	std::uninitialized_fill(std::begin(blk), std::end(blk), Blocks::Air);
+	std::uninitialized_fill(std::begin(lightMap), std::end(lightMap), 0);
 	for(int i=0; i<6; ++i)
-	{
-		updatedNeighbourLighting[i] = true;
 		updatedNeighbourMeshing[i] = true;
-	}
 }
 Chunk::~Chunk()
 {
@@ -33,13 +29,13 @@ bool Chunk::IsValidPos(const glm::ivec3 &pos)
 {
 	return IsValidPos(pos.x, pos.y, pos.z);
 }
-int Chunk::GetNumFromPos(int x, int y, int z)
+int Chunk::XYZ(int x, int y, int z = 0)
 {
 	return x+CHUNK_SIZE*(y+CHUNK_SIZE*z);
 }
-int Chunk::GetNumFromPos(const glm::ivec3 &pos)
+int Chunk::XYZ3(const glm::ivec3 &pos)
 {
-	return GetNumFromPos(pos.x, pos.y, pos.z);
+	return XYZ(pos.x, pos.y, pos.z);
 }
 glm::ivec3 Chunk::GetPosFromNum(int num)
 {
@@ -57,7 +53,7 @@ block Chunk::GetBlock(int x, int y, int z)
 	   y < 0 || y >= CHUNK_SIZE ||
 	   z < 0 || z >= CHUNK_SIZE)
 		return parent->GetBlock(ChunkPos.x * CHUNK_SIZE + x, ChunkPos.y * CHUNK_SIZE + y, ChunkPos.z * CHUNK_SIZE + z);
-	return (block)blk[GetNumFromPos(x, y, z)];
+	return (block)blk[XYZ(x, y, z)];
 }
 block Chunk::GetBlock(const glm::ivec3 &pos)
 {
@@ -83,9 +79,9 @@ void Chunk::SetBlock(int x, int y, int z, const block &b)
 	if(z == CHUNK_SIZE - 1)
 		updatedNeighbourMeshing[FRONT] = false;
 
-	blk[GetNumFromPos(x, y, z)]=b;
+	blk[XYZ(x, y, z)]=b;
 	if(b!=Blocks::Air)
-		beCoverd[x][z]=true;
+		beCovered[XYZ(x, z)]=true;
 	UpdatedMesh=false;
 	UpdatedLight=false;
 }
@@ -101,7 +97,7 @@ void Chunk::SetLight(int x, int y, int z, light_t v)
 		parent->SetLight(ChunkPos.x * CHUNK_SIZE + x, ChunkPos.y * CHUNK_SIZE + y, ChunkPos.z * CHUNK_SIZE + z, v);
 		return;
 	}
-	lightMap[GetNumFromPos(x, y, z)]=v;
+	lightMap[XYZ(x, y, z)]=v;
 	UpdatedMesh=false;
 }
 void Chunk::SetLight(const glm::ivec3 &pos, light_t v)
@@ -112,7 +108,7 @@ light_t Chunk::GetLight(int x, int y, int z)
 {
 	if(!IsValidPos(x, y, z))
 		return parent->GetLight(ChunkPos.x * CHUNK_SIZE + x, ChunkPos.y * CHUNK_SIZE + y, ChunkPos.z * CHUNK_SIZE + z);
-	return lightMap[GetNumFromPos(x, y, z)];
+	return lightMap[XYZ(x, y, z)];
 }
 light_t Chunk::GetLight(const glm::ivec3 &pos)
 {
@@ -140,7 +136,7 @@ void Chunk::UpdateLighting()
 	{
 		for(int x=0;x<CHUNK_SIZE;++x)
 			for(int y=0;y<CHUNK_SIZE;++y)
-				beCovered[x][y]=up_chk->beCoverd[x][y];
+				beCovered[x][y]=up_chk->beCovered[XYZ(x, y)];
 	}
 
 	for(int y=CHUNK_SIZE-1; y>=0; --y)
@@ -247,7 +243,7 @@ void Chunk::UpdateMeshing()
 
 			for(int vertex=0; vertex<4; ++vertex)
 			{
-				block_lightings[Chunk::GetNumFromPos(posi)][face].AO[vertex]=
+				block_lightings[Chunk::XYZ3(posi)][face].AO[vertex]=
 						vertexAO(neighbours[lookup3[face][vertex][0]],
 								 neighbours[lookup3[face][vertex][1]],
 								 neighbours[lookup3[face][vertex][2]]);
@@ -268,7 +264,7 @@ void Chunk::UpdateMeshing()
 						sum++;
 						sum_li+=neighbours_li[lookup3[face][vertex][nn]];
 					}
-				block_lightings[Chunk::GetNumFromPos(posi)][face].Light[vertex]= (light_t) (sum_li / sum);
+				block_lightings[Chunk::XYZ3(posi)][face].Light[vertex]= (light_t) (sum_li / sum);
 			}
 		}
 	}

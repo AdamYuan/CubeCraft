@@ -17,20 +17,23 @@ bool World::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 }
 void World::InitNoise()
 {
-	fn.SetSeed(0);
-	fn.SetFrequency(0.005f);
-	fn.SetFractalOctaves(3);
-	fn.SetNoiseType(FastNoise::NoiseType::SimplexFractal);
+	fastNoise = FastNoiseSIMD::NewFastNoiseSIMD();
+	fastNoise->SetSeed(0);
+	fastNoise->SetFrequency(0.002f);
+	fastNoise->SetFractalOctaves(3);
 }
 void World::setTerrain(ChunkPtr chk)
 {
 	chk->LoadedTerrain = true;
+
+	float* noiseSet = fastNoise->GetSimplexFractalSet(chk->ChunkPos.x * CHUNK_SIZE, 0, chk->ChunkPos.z * CHUNK_SIZE,
+													  CHUNK_SIZE, 1, CHUNK_SIZE);
+	int index=0;
+
 	for(int i=0; i<CHUNK_SIZE; ++i)
 		for(int j=0; j<CHUNK_SIZE; ++j)
 		{
-			int k = (int) std::round(fn.GetNoise(
-					chk->ChunkPos.x * CHUNK_SIZE + i,
-					chk->ChunkPos.z * CHUNK_SIZE + j) * 100) - 32;
+			int k = (int) std::round(noiseSet[index++] * 100) - 32;
 			int cy = (k+(k<0))/CHUNK_SIZE-(k<0);
 			if(cy == chk->ChunkPos.y) {
 				int gy = k - (cy * CHUNK_SIZE);
@@ -42,27 +45,8 @@ void World::setTerrain(ChunkPtr chk)
 				for(int y=0; y < CHUNK_SIZE; ++y)
 					chk->SetBlock(i, y, j, Blocks::Stone);
 		}
-	/*
-	for (int i = 0; i < CHUNK_SIZE; ++i)
-		for (int k = 0; k < CHUNK_SIZE; ++k) {
-			block current = fn.GetNoise(
-					chk->ChunkPos.x*CHUNK_SIZE + i,
-					chk->ChunkPos.y*CHUNK_SIZE + CHUNK_SIZE,
-					chk->ChunkPos.z*CHUNK_SIZE + k) >= 0.1 ?
-							Blocks::Stone : Blocks::Grass;
-			for (int j = CHUNK_SIZE; j--;) {
-				if (fn.GetNoise(
-						chk->ChunkPos.x*CHUNK_SIZE + i,
-						chk->ChunkPos.y*CHUNK_SIZE + j,
-						chk->ChunkPos.z*CHUNK_SIZE + k) >= 0.1) {
-					chk->SetBlock(i, j, k, current);
-					current = Blocks::Stone;
-				}
-				else
-					current = Blocks::Grass;
-			}
-		}
-	 */
+
+	FastNoiseSIMD::FreeNoiseSet(noiseSet);
 }
 void World::chunkLoadingFunc()
 {

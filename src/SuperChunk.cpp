@@ -16,7 +16,7 @@ void SuperChunk::SetChunk(const glm::ivec3 &chunkPos)
 {
 	std::hash<glm::ivec3> h;
 	size_t hash_t = h(chunkPos);
-	Chunks[chunkPos]=std::make_shared<Chunk>(this, chunkPos, std::to_string(hash_t));
+	Chunks[chunkPos] = std::make_shared<Chunk>(this, chunkPos, std::to_string(hash_t));
 }
 void SuperChunk::SetChunk(int x, int y, int z)
 {

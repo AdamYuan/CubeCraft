@@ -13,6 +13,7 @@ namespace MyGL
 		int width, height;
 		unsigned char* image = SOIL_load_image(file.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
 
+
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 				GL_RGBA, GL_UNSIGNED_BYTE, image);
 
@@ -49,6 +50,7 @@ namespace MyGL
 	void Texture::SetParameters(GLenum min_filter, GLenum mag_filter, GLenum wrap_filter)
 	{
 		Bind();
+
 		glTexParameteri(type, GL_TEXTURE_MIN_FILTER, min_filter);
 		glTexParameteri(type, GL_TEXTURE_MAG_FILTER, mag_filter);
 		glTexParameteri(type, GL_TEXTURE_WRAP_S, wrap_filter);

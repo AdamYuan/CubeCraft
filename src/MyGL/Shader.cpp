@@ -99,4 +99,14 @@ namespace MyGL
 	{
 		glUniform3fv(GetUniform(str), 1, glm::value_ptr(vector3));
 	}
+
+	void Shader::PassInt(const std::string &str, int i)
+	{
+		glUniform1i(GetUniform(str), i);
+	}
+
+	void Shader::PassFloat(const std::string &str, float f)
+	{
+		glUniform1f(GetUniform(str), f);
+	}
 }

@@ -10,14 +10,14 @@ out float frag_ao;
 out float frag_light;
 out vec3 pos;
 
-const float AOcurve[4] = float[4](0.74, 0.84, 0.94, 1.0);
+const float AOcurve[4] = float[4](0.6, 0.7333333, 0.8666666, 1.0);
 
 void main()
 {
 	frag_face=face;
 	frag_tex=tex;
 	frag_ao=AOcurve[int(lighting.x+0.5)];
-	frag_light=((lighting.y+2.0)/17.0);
+	frag_light=1.0f;//((lighting.y+2.0)/17.0);
 
 	gl_Position=matrix*position;
 

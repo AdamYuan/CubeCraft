@@ -10,23 +10,25 @@ class SuperChunk;
 class Chunk
 {
 private:
-	block blk[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	light_t lightMap[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE];
 	bool beCovered[CHUNK_SIZE*CHUNK_SIZE];
-	bool updatedNeighbourMeshing[6];
+	//bool updatedNeighbourMeshing[6];
 	SuperChunk *parent;
 public:
-	std::vector<vert_block> MeshData;
+	block blk[(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)];
+
+	std::vector<vert_block> SolidMeshData;
+	std::vector<vert_block> TransMeshData;
 	glm::ivec3 ChunkPos;
 	std::string ChunkLabel;
-	bool LoadedTerrain = false;
 
+	Chunk() = default;
 	Chunk(SuperChunk *_parent,glm::ivec3 _chunkPos,std::string _chunkLabel);
 	~Chunk();
 	static bool IsValidPos(int x, int y, int z);
 	static bool IsValidPos(const glm::ivec3 &pos);
-	static int XYZ(int x, int y, int z);
-	static int XYZ3(const glm::ivec3 &pos);
+	static int XYZ(int x, int y, int z, int digit);
+	static int XYZ3(const glm::ivec3 &pos, int digit);
 	static glm::ivec3 GetPosFromNum(int num);
 
 	void SetBlock(const glm::ivec3 &pos, const block &b);
@@ -40,11 +42,14 @@ public:
 	light_t GetLight(int x, int y, int z);
 
 	void UpdateLighting();
-	void UpdateMeshing();
-	void UpdateAll();
+	static std::pair<std::vector<vert_block>, std::vector<vert_block>> GetMesh(
+			glm::ivec3 chunkPos,
+			block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]
+	);
 
 	bool UpdatedMesh=false;
 	bool UpdatedLight=false;
 
-	std::unique_ptr<MyGL::VertexObject> MeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
+	std::unique_ptr<MyGL::VertexObject> SolidMeshObject;
+	std::unique_ptr<MyGL::VertexObject> TransMeshObject;
 };

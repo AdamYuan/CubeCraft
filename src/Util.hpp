@@ -84,7 +84,7 @@ namespace Funcs
 	template <typename T>
 	inline std::string Vec3ToString(glm::tvec3<T> vec)
 	{
-		return "(x = " + std::to_string(vec.x) + ", y = " + std::to_string(vec.y) + ", z = " + std::to_string(vec.z) + ")";
+		return "(" + std::to_string(vec.x) + ", " + std::to_string(vec.y) + ", " + std::to_string(vec.z) + ")";
 	}
 };
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <map>
+#include <unordered_map>
 #include <memory>
 #include "Chunk.hpp"
 #include "Util.hpp"
@@ -8,7 +8,7 @@ using ChunkPtr = std::shared_ptr<Chunk>;
 class SuperChunk
 {
 public:
-	std::map<glm::ivec3, ChunkPtr, Ivec3Compare> Chunks;
+	std::unordered_map<glm::ivec3, ChunkPtr> Chunks;
 
 	static glm::ivec3 GetChunkPos(int x, int y, int z);
 	static glm::ivec3 GetChunkPos(const glm::ivec3 &pos);

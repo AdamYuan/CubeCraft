@@ -1,5 +1,4 @@
 #include "Game.hpp"
-#include "Settings.hpp"
 #include "Renderer.hpp"
 
 namespace Game
@@ -10,7 +9,7 @@ namespace Game
 	Player player;
 
 	bool control=true;
-	bool showFrame=false;
+	bool showWireframe=false;
 	std::string FpsInfo;
 
 	MyGL::FrameRateManager frameRateManager;
@@ -29,6 +28,7 @@ namespace Game
 	void Init()
 	{
 		glfwInit();
+
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -131,8 +131,6 @@ namespace Game
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
 			control = !control;
-		if (key == GLFW_KEY_F && action == GLFW_RELEASE)
-			showFrame = !showFrame;
 	}
 	void focusCallback(GLFWwindow*, int focused)
 	{
@@ -163,18 +161,12 @@ namespace Game
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.6, 0.8, 1.0, 1);
 
-		if(showFrame)
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		else
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
 		Renderer::RenderWorld(&world);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 		Renderer::RenderCross();
-		std::string PositionInfo=" Position:(" + std::to_string(camera.Position.x) + "," +
-							 std::to_string(camera.Position.y) + "," +
-							 std::to_string(camera.Position.z) + ")";
+		std::string PositionInfo=" Position:" + Funcs::Vec3ToString(player.Position) +
+				" ChunkPos:" + Funcs::Vec3ToString(player.ChunkPos);
 		Renderer::RenderText(glm::vec2(0), FpsInfo + PositionInfo, 10, 20,
 							 glm::vec4(1), glm::vec4(0, 0, 0, 0.3f), matrices.Matrix2d,
 							 Renderer::TextStyle::regular);

@@ -11,31 +11,33 @@
 Chunk::Chunk(SuperChunk *_parent,glm::ivec3 _chunkPos,std::string _chunkLabel)
 		:parent(_parent),ChunkPos(_chunkPos),ChunkLabel(_chunkLabel)
 {
+	SolidMeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
+	TransMeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
 	std::uninitialized_fill(std::begin(beCovered), std::end(beCovered), false);
 	std::uninitialized_fill(std::begin(blk), std::end(blk), Blocks::Air);
 	std::uninitialized_fill(std::begin(lightMap), std::end(lightMap), 0);
-	for(int i=0; i<6; ++i)
-		updatedNeighbourMeshing[i] = true;
+	//for(int i=0; i<6; ++i)
+	//	updatedNeighbourMeshing[i] = true;
 }
 Chunk::~Chunk()
 {
 	//blk.close();
 }
-bool Chunk::IsValidPos(int x, int y, int z)
+inline bool Chunk::IsValidPos(int x, int y, int z)
 {
 	return x>=0 && x<CHUNK_SIZE && y>=0 && y<CHUNK_SIZE && z>=0 && z<CHUNK_SIZE;
 }
-bool Chunk::IsValidPos(const glm::ivec3 &pos)
+inline bool Chunk::IsValidPos(const glm::ivec3 &pos)
 {
 	return IsValidPos(pos.x, pos.y, pos.z);
 }
-int Chunk::XYZ(int x, int y, int z = 0)
+int Chunk::XYZ(int x, int y, int z = 0, int digit = CHUNK_SIZE)
 {
-	return x+CHUNK_SIZE*(y+CHUNK_SIZE*z);
+	return x+digit*(y+digit*z);
 }
-int Chunk::XYZ3(const glm::ivec3 &pos)
+inline int Chunk::XYZ3(const glm::ivec3 &pos, int digit = CHUNK_SIZE)
 {
-	return XYZ(pos.x, pos.y, pos.z);
+	return XYZ(pos.x, pos.y, pos.z, digit);
 }
 glm::ivec3 Chunk::GetPosFromNum(int num)
 {
@@ -49,11 +51,11 @@ glm::ivec3 Chunk::GetPosFromNum(int num)
 }
 block Chunk::GetBlock(int x, int y, int z)
 {
-	if(x < 0 || x >= CHUNK_SIZE ||
-	   y < 0 || y >= CHUNK_SIZE ||
-	   z < 0 || z >= CHUNK_SIZE)
-		return parent->GetBlock(ChunkPos.x * CHUNK_SIZE + x, ChunkPos.y * CHUNK_SIZE + y, ChunkPos.z * CHUNK_SIZE + z);
-	return (block)blk[XYZ(x, y, z)];
+	if(x < -1 || x > CHUNK_SIZE ||
+	   y < -1 || y > CHUNK_SIZE ||
+	   z < -1 || z > CHUNK_SIZE)
+		return Blocks::Air;
+	return (block)blk[XYZ(x + 1, y + 1, z + 1, CHUNK_SIZE + 2)];
 }
 block Chunk::GetBlock(const glm::ivec3 &pos)
 {
@@ -61,11 +63,11 @@ block Chunk::GetBlock(const glm::ivec3 &pos)
 }
 void Chunk::SetBlock(int x, int y, int z, const block &b)
 {
-	if(x < 0 || x >= CHUNK_SIZE ||
-	   y < 0 || y >= CHUNK_SIZE ||
-	   z < 0 || z >= CHUNK_SIZE)
+	if(x < -1 || x > CHUNK_SIZE ||
+	   y < -1 || y > CHUNK_SIZE ||
+	   z < -1 || z > CHUNK_SIZE)
 		return;
-
+/*
 	if(x == 0)
 		updatedNeighbourMeshing[LEFT] = false;
 	if(x == CHUNK_SIZE - 1)
@@ -78,10 +80,12 @@ void Chunk::SetBlock(int x, int y, int z, const block &b)
 		updatedNeighbourMeshing[BACK] = false;
 	if(z == CHUNK_SIZE - 1)
 		updatedNeighbourMeshing[FRONT] = false;
+*/
+	blk[XYZ(x + 1, y + 1, z + 1, CHUNK_SIZE + 2)] = b;
 
-	blk[XYZ(x, y, z)]=b;
-	if(b!=Blocks::Air)
+	if(b != Blocks::Air && x != -1 && x != CHUNK_SIZE && z != -1 && z != CHUNK_SIZE)
 		beCovered[XYZ(x, z)]=true;
+
 	UpdatedMesh=false;
 	UpdatedLight=false;
 }
@@ -131,13 +135,13 @@ void Chunk::UpdateLighting()
 
 	std::uninitialized_fill(&beCovered[0][0], &beCovered[CHUNK_SIZE-1][CHUNK_SIZE-1]+1, false);
 
-	ChunkPtr up_chk= parent->GetChunk(ChunkPos.x, ChunkPos.y + 1, ChunkPos.z);
+	/*ChunkPtr up_chk= parent->GetChunk(ChunkPos.x, ChunkPos.y + 1, ChunkPos.z);
 	if(up_chk)
 	{
 		for(int x=0;x<CHUNK_SIZE;++x)
 			for(int y=0;y<CHUNK_SIZE;++y)
 				beCovered[x][y]=up_chk->beCovered[XYZ(x, y)];
-	}
+	}*/
 
 	for(int y=CHUNK_SIZE-1; y>=0; --y)
 		for(int x=0; x<CHUNK_SIZE; ++x)
@@ -174,81 +178,71 @@ void Chunk::UpdateLighting()
 	UpdatedLight=true;
 }
 
-void Chunk::UpdateMeshing()
+std::pair<std::vector<vert_block>, std::vector<vert_block>> Chunk::GetMesh(glm::ivec3 chunkPos,
+																		   block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)])
 {
-	if(UpdatedMesh)
-		return;
-
-	MeshData.clear();
-
-	for(short i=0; i<6; ++i)
-	{
-		ChunkPtr nei = parent->GetChunk(ChunkPos + Funcs::GetFaceDirect(i));
-		if(nei && !updatedNeighbourMeshing[i])
-			nei->UpdatedMesh = false;
-		updatedNeighbourMeshing[i] = true;
-	}
-
-	static auto vertexAO=[&](block side1,block corner,block side2)->int
-	{
-		bool b1=static_cast<bool>(side1),bc=static_cast<bool>(corner),b2=static_cast<bool>(side2);
-		if(b1&&b2)
-			return 0;
-		return 3-b1-bc-b2;
-	};
+	std::vector<vert_block> TransMeshData, SolidMeshData;
+#define getBlock(x, y, z) (blk[Chunk::XYZ(x+1, y+1, z+1, CHUNK_SIZE + 2)])
+#define getBlockIVec3(pos) (blk[Chunk::XYZ((pos).x+1, (pos).y+1, (pos).z+1, CHUNK_SIZE + 2)])
 
 	static const int lookup3[6][4][3]=
 			{
-					21,18,19,21,24,25,23,26,25,23,20,19,
-					3,0,1,5,2,1,5,8,7,3,6,7,
-					15,6,7,17,8,7,17,26,25,15,24,25,
-					9,0,1,9,18,19,11,20,19,11,2,1,
-					11,2,5,11,20,23,17,26,23,17,8,5,
-					9,0,3,15,6,3,15,24,21,9,18,21
+					21, 18, 19, 21, 24, 25, 23, 26, 25, 23, 20, 19,
+					3, 0, 1, 5, 2, 1, 5, 8, 7, 3, 6, 7,
+					15, 6, 7, 17, 8, 7, 17, 26, 25, 15, 24, 25,
+					9, 0, 1, 9, 18, 19, 11, 20, 19, 11, 2, 1,
+					11, 2, 5, 11, 20, 23, 17, 26, 23, 17, 8, 5,
+					9, 0, 3, 15, 6, 3, 15, 24, 21, 9, 18, 21
 			};
 	static FaceLighting block_lightings[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE][6];
 	static block neighbours[27];
-	static light_t neighbours_li[27];
+	//static light_t neighbours_li[27];
 
 	//calculate the lighting data of necessary face vertices
 	glm::ivec3 posi;
 	for(int iterator = 0; iterator < CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE; ++iterator)
 	{
 		posi = GetPosFromNum(iterator);
-		if(GetBlock(posi)==Blocks::Air)
+		if(getBlockIVec3(posi)==Blocks::Air)
 			continue;
 		int index=0;
 		glm::ivec3 n;
-		bool first_face=false;
+		bool first_face = true;
 		for(short face=0; face<6; ++face)
 		{
-			block bn = GetBlock(posi), bf = GetBlock(posi + Funcs::GetFaceDirect(face));
+			block bn = getBlockIVec3(posi), bf = getBlockIVec3(posi + Funcs::GetFaceDirect(face));
 			bool trans_n= BlockMethods::IsTransparent(bn), trans_f= BlockMethods::IsTransparent(bf);
 			if(!trans_n && !trans_f)
 				continue;
 			if(trans_n && bf!=Blocks::Air)
 				continue;
 
-			if(!first_face)//calculate the neighbours only for once
+			if(first_face)//calculate the neighbours only for once
 			{
 				for(n.x=-1; n.x<=1; ++n.x)
 					for(n.y=-1; n.y<=1; ++n.y)
 						for(n.z=-1; n.z<=1; ++n.z, ++index)
 						{
-							neighbours[index]= GetBlock(posi + n);
-							neighbours_li[index]= GetLight(posi + n);
+							neighbours[index] = getBlockIVec3(posi + n);
+							//neighbours_li[index]= GetLight(posi + n);
 						}
-				first_face=true;
+				first_face = false;
 			}
 
 			for(int vertex=0; vertex<4; ++vertex)
 			{
-				block_lightings[Chunk::XYZ3(posi)][face].AO[vertex]=
-						vertexAO(neighbours[lookup3[face][vertex][0]],
-								 neighbours[lookup3[face][vertex][1]],
-								 neighbours[lookup3[face][vertex][2]]);
+				//calculate AO
+				block side1 = neighbours[lookup3[face][vertex][0]],
+						corner = neighbours[lookup3[face][vertex][1]],
+						side2 = neighbours[lookup3[face][vertex][2]];
 
-				light_t center_l = GetLight(posi + Funcs::GetFaceDirect(face));
+				bool b1 = !BlockMethods::IsTransparent(side1),
+						bc = !BlockMethods::IsTransparent(corner),
+						b2 = !BlockMethods::IsTransparent(side2);
+
+				block_lightings[Chunk::XYZ3(posi)][face].AO[vertex] = b1 && b2 ? 0 : 3 - b1 - b2 - bc;
+
+				/*light_t center_l = GetLight(posi + Funcs::GetFaceDirect(face));
 
 				//smooth the Light using the average value
 				int sum=1, sum_li=center_l;
@@ -263,8 +257,8 @@ void Chunk::UpdateMeshing()
 							continue;
 						sum++;
 						sum_li+=neighbours_li[lookup3[face][vertex][nn]];
-					}
-				block_lightings[Chunk::XYZ3(posi)][face].Light[vertex]= (light_t) (sum_li / sum);
+					}*/
+				block_lightings[Chunk::XYZ3(posi)][face].Light[vertex] = 15;//(light_t) (sum_li / sum);
 			}
 		}
 	}
@@ -279,14 +273,6 @@ void Chunk::UpdateMeshing()
 		FaceLighting lightMask[CHUNK_SIZE*CHUNK_SIZE];
 		// Compute mask
 		q[axis] = 1;
-		ChunkPtr neighbourChunk0 = parent->GetChunk(ChunkPos - glm::ivec3(q[0], q[1], q[2])),
-				neighbourChunk1 = parent->GetChunk(ChunkPos + glm::ivec3(q[0], q[1], q[2]));
-		bool neighbourChunkExist0 = neighbourChunk0 != nullptr;
-		if(neighbourChunkExist0)
-			neighbourChunkExist0 = neighbourChunk0->LoadedTerrain;
-		bool neighbourChunkExist1 = neighbourChunk1 != nullptr;
-		if(neighbourChunkExist1)
-			neighbourChunkExist1 = neighbourChunk1->LoadedTerrain;
 		for (x[axis] = -1; x[axis] < CHUNK_SIZE;)
 		{
 			std::size_t counter = 0;
@@ -294,10 +280,10 @@ void Chunk::UpdateMeshing()
 				for (x[u] = 0; x[u] < CHUNK_SIZE; ++x[u], ++counter)
 				{
 					const block a = /*(0 <= x[axis]) ?*/
-							GetBlock(x[0], x[1], x[2])
+							getBlock(x[0], x[1], x[2])
 					/*: 0*/;
 					const block b = /*(x[axis] < CHUNK_SIZE - 1) ?*/
-							GetBlock(x[0] + q[0], x[1] + q[1], x[2] + q[2])
+							getBlock(x[0] + q[0], x[1] + q[1], x[2] + q[2])
 					/*: 0*/;
 
 					const bool canput_a=(0 <= x[axis]);
@@ -315,12 +301,7 @@ void Chunk::UpdateMeshing()
 					const FaceLighting li_b=(x[axis] < CHUNK_SIZE - 1)?
 											block_lightings[index_b][axis*2+1]
 																	  :FaceLighting();
-					if((x[axis] == -1 && !neighbourChunkExist0) || (x[axis] + 1 == CHUNK_SIZE && !neighbourChunkExist1))
-					{
-						mask[counter] = 0;
-						lightMask[counter] = FaceLighting();
-					}
-					else if(!trans_a && trans_b && canput_a)//soild block surface
+					if(!trans_a && trans_b && canput_a)//soild block surface
 					{
 						mask[counter] = a;
 						lightMask[counter] = li_a;
@@ -386,7 +367,7 @@ void Chunk::UpdateMeshing()
 
 						float du[3] = {0}, dv[3] = {0};
 
-						short f= (short) (axis * 2 + (c <= 0));
+						short f = (short) (axis * 2 + (c <= 0));
 
 
 						if (c > 0)
@@ -402,9 +383,9 @@ void Chunk::UpdateMeshing()
 						}
 
 						int tex= BlockMethods::GetTexture((block) c, f);
-						float vx=ChunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
-								vy=ChunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
-								vz=ChunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;
+						float vx=chunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
+								vy=chunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
+								vz=chunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;
 						vert_block v00={vx, vy, vz,
 										(float)tex,(float)f,(float)fli.AO[0],(float)fli.Light[0]};
 						vert_block v01={vx + du[0], vy + du[1], vz + du[2],
@@ -428,13 +409,26 @@ void Chunk::UpdateMeshing()
 							//|    /    |
 							//| /       |
 							//00--------01
-							MeshData.push_back(v00);
-							MeshData.push_back(v01);
-							MeshData.push_back(v10);
+							if(c == Blocks::Water)
+							{
+								TransMeshData.push_back(v00);
+								TransMeshData.push_back(v01);
+								TransMeshData.push_back(v10);
 
-							MeshData.push_back(v00);
-							MeshData.push_back(v10);
-							MeshData.push_back(v11);
+								TransMeshData.push_back(v00);
+								TransMeshData.push_back(v10);
+								TransMeshData.push_back(v11);
+							}
+							else
+							{
+								SolidMeshData.push_back(v00);
+								SolidMeshData.push_back(v01);
+								SolidMeshData.push_back(v10);
+
+								SolidMeshData.push_back(v00);
+								SolidMeshData.push_back(v10);
+								SolidMeshData.push_back(v11);
+							}
 						}
 						else
 						{
@@ -443,13 +437,26 @@ void Chunk::UpdateMeshing()
 							//|    \    |
 							//|       \ |
 							//00--------01
-							MeshData.push_back(v01);
-							MeshData.push_back(v10);
-							MeshData.push_back(v11);
+							if(c == Blocks::Water)
+							{
+								TransMeshData.push_back(v01);
+								TransMeshData.push_back(v10);
+								TransMeshData.push_back(v11);
 
-							MeshData.push_back(v00);
-							MeshData.push_back(v01);
-							MeshData.push_back(v11);
+								TransMeshData.push_back(v00);
+								TransMeshData.push_back(v01);
+								TransMeshData.push_back(v11);
+							}
+							else
+							{
+								SolidMeshData.push_back(v01);
+								SolidMeshData.push_back(v10);
+								SolidMeshData.push_back(v11);
+
+								SolidMeshData.push_back(v00);
+								SolidMeshData.push_back(v01);
+								SolidMeshData.push_back(v11);
+							}
 						}
 
 						for (std::size_t b = 0; b < width; ++b)
@@ -467,10 +474,5 @@ void Chunk::UpdateMeshing()
 				}
 		}
 	}
-	UpdatedMesh=true;
-}
-void Chunk::UpdateAll()
-{
-	UpdateLighting();
-	UpdateMeshing();
+	return {SolidMeshData, TransMeshData};
 }

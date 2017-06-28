@@ -1,6 +1,6 @@
 #pragma once
 #include "SuperChunk.hpp"
-#include <set>
+#include <unordered_set>
 #include <list>
 #include <thread>
 #include <mutex>
@@ -15,12 +15,12 @@ private:
 	bool minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b);
 	void chunkUpdateFunc();
 	void chunkLoadingFunc();
-	void setTerrain(ChunkPtr chk);
-	std::set<glm::ivec3, Ivec3Compare> chunkLoadedSet;
+	void setTerrain(glm::ivec3 chunkPos, block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]);
+	std::unordered_set<glm::ivec3> chunkLoadedSet;
 
-	std::set<glm::ivec3, Ivec3Compare> chunkLoadingSet;
+	std::unordered_set<glm::ivec3> chunkLoadingSet;
 
-	std::set<glm::ivec3, Ivec3Compare> chunkUpdateSet;
+	std::unordered_set<glm::ivec3> chunkUpdateSet;
 
 	std::mutex bgMtx;
 	FastNoiseSIMD *fastNoise;

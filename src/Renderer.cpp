@@ -5,12 +5,19 @@
 //update the vertex mesh of a chunk
 void Renderer::ApplyChunkMesh(ChunkPtr chk) {
 	//add the data array into the VAO,VBO
-	chk->MeshObject->SetDataVec(chk->MeshData);
-	chk->MeshObject->SetAttributes(4,
+	chk->SolidMeshObject->SetDataVec(chk->SolidMeshData);
+	chk->SolidMeshObject->SetAttributes(4,
 								  Resource::Attributes::Position, 3,
 								  Resource::Attributes::BTexture, 1,
 								  Resource::Attributes::BFacing, 1,
 								  Resource::Attributes::BLighting, 2);
+
+	chk->TransMeshObject->SetDataVec(chk->TransMeshData);
+	chk->TransMeshObject->SetAttributes(4,
+										Resource::Attributes::Position, 3,
+										Resource::Attributes::BTexture, 1,
+										Resource::Attributes::BFacing, 1,
+										Resource::Attributes::BLighting, 2);
 }
 
 void Renderer::RenderWorld(World *wld) {
@@ -21,12 +28,14 @@ void Renderer::RenderWorld(World *wld) {
 	glActiveTexture(GL_TEXTURE0);
 	Resource::BlockTexture.Bind();
 
-	glUniform1i(Resource::BlockShader[Resource::UniformSampler], 0);
+	Resource::BlockShader.PassInt(Resource::UniformSampler, 0);
 
 	//other uniforms
-	glUniform1f(Resource::BlockShader[Resource::BlockUniformViewDistance], VIEW_DISTANCE);
+	Resource::BlockShader.PassFloat(Resource::BlockUniformViewDistance, VIEW_DISTANCE);
 	Resource::BlockShader.PassMat4(Resource::UniformMatrix, Game::matrices.Projection3d * Game::camera.GetViewMatrix());
 	Resource::BlockShader.PassVec3(Resource::BlockUniformCamera, Game::camera.Position);
+
+	std::vector<ChunkPtr> visibleChunks;
 
 	//Render
 	for (glm::ivec3 pos:wld->ChunkRenderList) {
@@ -35,16 +44,39 @@ void Renderer::RenderWorld(World *wld) {
 		if (!Game::frustum.CubeInFrustum(center, CHUNK_SIZE / 2))
 			continue;
 
-		//std::cout << Funcs::Vec3ToString(pos) << std::endl;
-		wld->Voxels.GetChunk(pos)->MeshObject->Render(GL_TRIANGLES);
+		ChunkPtr chk = wld->Voxels.GetChunk(pos);
+		//if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())
+		//	continue;
+
+		visibleChunks.push_back(chk);
 	}
+
+	glEnable(GL_POLYGON_OFFSET_FILL);
+
+	glPolygonOffset(1, 1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	for(ChunkPtr chk : visibleChunks)
+		chk->SolidMeshObject->Render(GL_TRIANGLES);
+
+	glDisable(GL_CULL_FACE);
+	for(ChunkPtr chk : visibleChunks)
+		chk->TransMeshObject->Render(GL_TRIANGLES);
+	glEnable(GL_CULL_FACE);
+
+	glDisable(GL_POLYGON_OFFSET_FILL);
 }
 
 void Renderer::RenderCross() {
-	float p = 15.0;
-	static const float vertices[] = {0, -p, 0, p, -p, 0, p, 0};
+	float p = 10.0, ht = 1.0f;
+	static const float vertices[] = {-ht, -p, -ht, p, ht, -p,
+									 ht, -p, -ht, p, ht, p,
+									 -p, ht, p, -ht, -p, -ht,
+									 p, ht, p, -ht, -p, ht,
+									 -ht, -ht, -ht, ht, ht, -ht,
+									 ht, -ht, -ht, ht, ht, ht};
 	MyGL::VertexObject crossObj;
-	crossObj.SetDataArr(vertices, 8);
+	crossObj.SetDataArr(vertices, 36);
 	crossObj.SetAttributes(1, Resource::Attributes::Position, 2);
 
 	Resource::LineShader.Use();
@@ -55,7 +87,7 @@ void Renderer::RenderCross() {
 	glEnable(GL_COLOR_LOGIC_OP);
 	glLogicOp(GL_INVERT); //invert color
 
-	crossObj.Render(GL_LINES);
+	crossObj.Render(GL_TRIANGLES);
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_COLOR_LOGIC_OP);
@@ -109,7 +141,8 @@ void Renderer::RenderText(const glm::vec2 &pos, const std::string &str,
 		Resource::FontTexture.Bind();
 	else if (style == TextStyle::bold)
 		Resource::FontBoldTexture.Bind();
-	glUniform1i(Resource::TextShader[Resource::UniformSampler], 0);
+
+	Resource::TextShader.PassInt(Resource::UniformSampler, 0);
 
 	glDisable(GL_DEPTH_TEST);
 	text_obj.Render(GL_TRIANGLES);

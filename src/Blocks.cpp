@@ -30,7 +30,7 @@ bool block_transparents[BLOCK_NUM]=
 				false,
 				true,
 				false,
-				false,
+				true,
 				false
 		};
 

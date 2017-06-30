@@ -1,5 +1,6 @@
 #include "Texture.hpp"
-#include <SOIL/SOIL.h>
+#include <iostream>
+#include <SOIL.h>
 namespace MyGL
 {
 	void Texture::Load2d(const std::string &file)
@@ -12,7 +13,6 @@ namespace MyGL
 
 		int width, height;
 		unsigned char* image = SOIL_load_image(file.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
-
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
 				GL_RGBA, GL_UNSIGNED_BYTE, image);

@@ -16,10 +16,9 @@ private:
 	void chunkUpdateFunc();
 	void chunkLoadingFunc();
 	void setTerrain(glm::ivec3 chunkPos, block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]);
+
 	std::unordered_set<glm::ivec3> chunkLoadedSet;
-
 	std::unordered_set<glm::ivec3> chunkLoadingSet;
-
 	std::unordered_set<glm::ivec3> chunkUpdateSet;
 
 	std::mutex bgMtx;

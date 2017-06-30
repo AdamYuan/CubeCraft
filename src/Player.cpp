@@ -207,3 +207,8 @@ void Player::Update()
 	ChunkPos = i3;
 	Game::camera.Position = Position;
 }
+
+void Player::StartTimer()
+{
+	lastGravityTime = glfwGetTime();
+}

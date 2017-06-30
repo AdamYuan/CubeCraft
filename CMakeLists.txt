@@ -3,8 +3,8 @@ project(CubeCraft)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Ofast -march=core-avx2")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=core-avx2")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Ofast")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=core-avx2")
 
 find_package(OpenGL REQUIRED)
 if (OPENGL_FOUND)
@@ -39,6 +39,7 @@ if (SOIL_FOUND)
 endif()
 
 
-file(GLOB SOURCE_FILES src/*.cpp src/*/*.cpp)
+include_directories(dep)
+file(GLOB SOURCE_FILES src/*.cpp src/*/*.cpp dep/*.cpp dep/*/*.cpp)
 
 add_executable(CubeCraft ${SOURCE_FILES})

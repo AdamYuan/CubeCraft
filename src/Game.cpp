@@ -81,6 +81,7 @@ namespace Game
 	{
 		int last=0;
 
+		player.StartTimer();
 		while(!glfwWindowShouldClose(Window))
 		{
 			frameRateManager.UpdateFrameRateInfo();

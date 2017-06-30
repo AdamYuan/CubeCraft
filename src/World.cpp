@@ -5,7 +5,8 @@
 
 ThreadPool threadPool(THREAD_NUM);
 
-glm::ivec3 lastPlayerChunkPos((int) pow(CHUNK_LOAD_DISTANCE * 2 + 1, 3) * 2);
+glm::ivec3 lastPlayerChunkPos(INT_MAX-1);
+
 bool World::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 {
 	if(b.x == INT_MAX) return true;
@@ -23,49 +24,101 @@ void World::InitNoise()
 }
 void World::setTerrain(glm::ivec3 chunkPos, block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)])
 {
-	fastNoise->SetFrequency(0.0007f);
-	float* noiseSet = fastNoise->GetSimplexFractalSet(chunkPos.x * CHUNK_SIZE - 1, chunkPos.z * CHUNK_SIZE - 1, 0,
-													  CHUNK_SIZE + 2, CHUNK_SIZE + 2, 1);
-	fastNoise->SetFrequency(0.01f);
-	float* noiseSet3D = fastNoise->GetSimplexFractalSet(chunkPos.x * CHUNK_SIZE - 1, chunkPos.z * CHUNK_SIZE - 1, chunkPos.y * CHUNK_SIZE - 1,
-													  CHUNK_SIZE + 2, CHUNK_SIZE + 2, CHUNK_SIZE + 2);
-	int index=0;
+#define getBlock(x, y, z) (blk[Chunk::XYZ(x+1, y+1, z+1, CHUNK_SIZE + 2)])
+#define SCALE 32
 
 	const int chunkBase = chunkPos.y * CHUNK_SIZE;
-	const int seaLevel = -32;
+	const int seaLevel = -SCALE;
 
-	for(int i = -1; i <= CHUNK_SIZE; ++i)
-		for(int j = -1; j <= CHUNK_SIZE; ++j)
+	if(chunkBase > 1) //must be full of air
+	{
+		return;
+	}
+	if(chunkBase < -SCALE * 2 - 1) //must be full of stone
+	{
+		std::fill(std::begin(blk), std::end(blk), Blocks::Stone);
+		return;
+	}
+
+	fastNoise->SetFrequency(0.001f);
+	float* heightNoiseSet = fastNoise->GetSimplexFractalSet(chunkPos.x * CHUNK_SIZE - 2, chunkPos.z * CHUNK_SIZE - 2, 0,
+													  CHUNK_SIZE + 4, CHUNK_SIZE + 4, 1);
+	fastNoise->SetFrequency(0.01f);
+	float* dotsNoiseSet = fastNoise->GetSimplexFractalSet(chunkPos.x * CHUNK_SIZE - 2, chunkPos.z * CHUNK_SIZE - 2, 0,
+													  CHUNK_SIZE + 4, CHUNK_SIZE + 4, 1);
+	fastNoise->SetFrequency(1.0f);
+	float* treeNoiseSet = fastNoise->GetWhiteNoiseSet(chunkPos.x * CHUNK_SIZE - 2, chunkPos.z * CHUNK_SIZE - 2, 0,
+													   CHUNK_SIZE + 4, CHUNK_SIZE + 4, 1);
+	int index=0;
+
+	for(int i = -2; i <= CHUNK_SIZE + 1; ++i)
+		for(int j = -2; j <= CHUNK_SIZE + 1; ++j, ++index)
 		{
-			const int height = (int) std::round(noiseSet[index++] * 100) - 32;
-			for(int k = chunkBase - 1; k <= std::max(seaLevel, height) && k <= chunkBase + CHUNK_SIZE; ++k)
+			const bool treeExist = (int) ((treeNoiseSet[index] + 1.0f) * 128.0f) == 0;
+
+			const int treeHeight = (int) ((treeNoiseSet[index] + 1.0f) * 10000.0f) % 5 + 7;
+
+			const int height = (int) std::round(heightNoiseSet[index] * SCALE) + seaLevel;
+			if(i != -2 && i != CHUNK_SIZE + 1 && j != -2 && j != CHUNK_SIZE + 1)
 			{
-				int arrayIndex = Chunk::XYZ(i + 1, k-chunkBase + 1, j + 1, CHUNK_SIZE + 2);
-				if(k <= height)
+				for(int k = chunkBase - 1; k <= std::max(seaLevel, height) && k <= chunkBase + CHUNK_SIZE; ++k)
 				{
-					if(noiseSet3D[(index - 1) * (CHUNK_SIZE + 2) + k - chunkBase + 1] < -0.3f)
+					int arrayIndex = Chunk::XYZ(i + 1, k-chunkBase + 1, j + 1, CHUNK_SIZE + 2);
+					if(k <= height)
 					{
-						if(k >= seaLevel)
+						if(dotsNoiseSet[index] < -0.4f && k == height)
+						{
+							if(k >= seaLevel)
+								blk[arrayIndex] = Blocks::Dirt;
+							else
+								blk[arrayIndex] = Blocks::Sand;
+						}
+						else if(k == height && std::abs(k - seaLevel) <= 1)
+							blk[arrayIndex] = Blocks::Sand;
+						else if(k == height && k >= seaLevel)
+						{
+							if(treeExist)
+								blk[arrayIndex] = Blocks::Dirt;
+							else
+								blk[arrayIndex] = Blocks::Grass;
+						}
+						else if(k == height && k < seaLevel)
 							blk[arrayIndex] = Blocks::Dirt;
 						else
-							blk[arrayIndex] = Blocks::Sand;
+							blk[arrayIndex] = Blocks::Stone;
 					}
-					else if(k == height && std::abs(k - seaLevel) <= 1)
-						blk[arrayIndex] = Blocks::Sand;
-					else if(k == height && k >= seaLevel)
-						blk[arrayIndex] = Blocks::Grass;
-					else if(k == height && k < seaLevel)
-						blk[arrayIndex] = Blocks::Dirt;
 					else
-						blk[arrayIndex] = Blocks::Stone;
+						blk[arrayIndex] = Blocks::Water;
 				}
-				else
-					blk[arrayIndex] = Blocks::Water;
+				if(treeExist && height - 1 > seaLevel && height + treeHeight > chunkBase)
+					for(int k=height + 1; k <= height + treeHeight && k <= chunkBase + CHUNK_SIZE; ++k)
+					{
+						if(k - chunkBase >= -1)
+							getBlock(i, k - chunkBase, j) = Blocks::Wood;
+					}
+			}
+			if(treeExist && height - 1 > seaLevel && height + treeHeight > chunkBase) {
+
+				const int leavesHeight = (int) ((treeNoiseSet[index] + 1.0f) * 10000.0f) % 4 + 2;
+
+				for (int k = height + treeHeight - leavesHeight + 1;
+					 k <= height + treeHeight && k <= chunkBase + CHUNK_SIZE; ++k)
+					for (int x = i - 2; x <= i + 2 && x <= CHUNK_SIZE; ++x)
+						for (int y = j - 2; y <= j + 2 && y <= CHUNK_SIZE; ++y) {
+							if (x == i && y == j)
+								continue;
+
+							if (x >= -1 && y >= -1 && k - chunkBase >= -1
+								&& getBlock(x, k - chunkBase, y) == Blocks::Air) {
+								getBlock(x, k - chunkBase, y) = Blocks::Leaves;
+							}
+						}
 			}
 		}
 
-	FastNoiseSIMD::FreeNoiseSet(noiseSet);
-	FastNoiseSIMD::FreeNoiseSet(noiseSet3D);
+	FastNoiseSIMD::FreeNoiseSet(heightNoiseSet);
+	FastNoiseSIMD::FreeNoiseSet(dotsNoiseSet);
+	FastNoiseSIMD::FreeNoiseSet(treeNoiseSet);
 }
 void World::chunkLoadingFunc()
 {
@@ -86,7 +139,7 @@ void World::chunkLoadingFunc()
 	block blk[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)];
 	std::uninitialized_fill(std::begin(blk), std::end(blk), Blocks::Air);
 
-	setTerrain(pos, blk);
+	setTerrain(pos, std::ref(blk));
 
 	bgMtx.lock();
 	ChunkPtr chk = Voxels.GetChunk(pos);
@@ -126,7 +179,7 @@ void World::chunkUpdateFunc()
 	chunkUpdateSet.erase(pos);
 	bgMtx.unlock();
 
-	auto MeshData = Chunk::GetMesh(pos, blk);
+	auto MeshData = Chunk::GetMesh(pos, std::cref(blk));
 
 	bgMtx.lock();
 	chk = Voxels.GetChunk(pos);
@@ -168,15 +221,14 @@ void World::UpdateChunkLists()
 		ChunkPtr &chk=i->second;
 		glm::ivec3 pos=i->first;
 
-		if(!chk)//delete if the chunk is null
+		if(!chk)
+			// delete if the chunk is null
 		{
 			i = Voxels.Chunks.erase(i);
 			continue;
 		}
 
 		if(glm::distance((glm::vec3)Game::player.ChunkPos, (glm::vec3)pos) > (float)CHUNK_LOAD_DISTANCE)
-		//if(pos.x < minLoadRange.x || pos.y < minLoadRange.y || pos.z < minLoadRange.z
-		//   || pos.x > maxLoadRange.x || pos.y > maxLoadRange.y || pos.z > maxLoadRange.z)
 		{// chunk is out of loading range
 			++i;
 			//completely erase the chunk
@@ -189,15 +241,17 @@ void World::UpdateChunkLists()
 		}
 
 		if(!chunkLoadedSet.count(pos))
+			// chunk is not loaded
 		{
 			++i;
 			continue;
 		}
-
-		if(!chk->UpdatedMesh)
+		else if(!chk->UpdatedMesh)
+			// chunk is loaded but hasn't meshed
 			chunkUpdateSet.insert(pos);
 		else if(!chk->SolidMeshData.empty() || !chk->TransMeshData.empty())
 		{
+			// chunk is meshed, then apply the mesh and clear the mesh array
 			Renderer::ApplyChunkMesh(chk);
 
 			chk->SolidMeshData.clear();
@@ -207,7 +261,8 @@ void World::UpdateChunkLists()
 			chk->TransMeshData.shrink_to_fit();
 		}
 
-		if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())//don't Render if there weren't any thing
+		if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())
+			// don't Render if there weren't any thing in the chunk mesh
 		{
 			++i;
 			continue;
@@ -215,8 +270,8 @@ void World::UpdateChunkLists()
 
 		glm::vec3 center=(glm::vec3) pos*(float)CHUNK_SIZE+glm::vec3(CHUNK_SIZE/2);
 
-		//Cull far away Chunks
 		if(glm::distance(Game::camera.Position, center) > VIEW_DISTANCE+CHUNK_SIZE)
+			//cull far away Chunks
 		{
 			++i;
 			continue;

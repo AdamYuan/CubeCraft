@@ -30,6 +30,15 @@ glm::ivec3 Funcs::GetFaceDirect(short face)
 	return fdirects[face];
 }
 
+std::string Funcs::GetApplicationPath()
+{
+#include <limits.h>
+#include <stdlib.h>
+
+	char *full_path = realpath(".", NULL);
+	free(full_path);
+}
+
 bool Ivec3Compare::operator()(const glm::ivec3 &lhs, const glm::ivec3 &rhs) const
 {
 	return lhs.x < rhs.x ||

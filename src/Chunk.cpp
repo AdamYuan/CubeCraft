@@ -25,7 +25,7 @@ Chunk::~Chunk()
 }
 inline bool Chunk::IsValidPos(int x, int y, int z)
 {
-	return x>=0 && x<CHUNK_SIZE && y>=0 && y<CHUNK_SIZE && z>=0 && z<CHUNK_SIZE;
+	return x>=-1 && x<=CHUNK_SIZE && y>=-1 && y<=CHUNK_SIZE && z>=-1 && z<=CHUNK_SIZE;
 }
 inline bool Chunk::IsValidPos(const glm::ivec3 &pos)
 {
@@ -179,11 +179,12 @@ void Chunk::UpdateLighting()
 }
 
 std::pair<std::vector<vert_block>, std::vector<vert_block>> Chunk::GetMesh(glm::ivec3 chunkPos,
-																		   block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)])
+																		   const block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)])
 {
 	std::vector<vert_block> TransMeshData, SolidMeshData;
-#define getBlock(x, y, z) (blk[Chunk::XYZ(x+1, y+1, z+1, CHUNK_SIZE + 2)])
-#define getBlockIVec3(pos) (blk[Chunk::XYZ((pos).x+1, (pos).y+1, (pos).z+1, CHUNK_SIZE + 2)])
+#define getBlock(x, y, z) (((x) < -1 || (x) > CHUNK_SIZE || (y) < -1 || (y) > CHUNK_SIZE || (z) < -1 || (z) > CHUNK_SIZE)\
+	? (Blocks::Air) : (blk[Chunk::XYZ((x+1), (y+1), (z+1), CHUNK_SIZE + 2)]))
+#define getBlockIVec3(pos) (getBlock((pos).x, (pos).y, (pos).z))
 
 	static const int lookup3[6][4][3]=
 			{
@@ -475,4 +476,18 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> Chunk::GetMesh(glm::
 		}
 	}
 	return {SolidMeshData, TransMeshData};
+}
+
+block Chunk::GetBlockFromArray(block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)], int x, int y, int z)
+{
+	if(x < -1 || x > CHUNK_SIZE || y < -1 || y > CHUNK_SIZE || z < -1 || z > CHUNK_SIZE)
+		return Blocks::Air;
+ 	return blk[Chunk::XYZ(x+1, y+1, z+1, CHUNK_SIZE + 2)];
+}
+
+void Chunk::SetBlockToArray(block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)], int x, int y, int z, block b)
+{
+	if(x < -1 || x > CHUNK_SIZE || y < -1 || y > CHUNK_SIZE || z < -1 || z > CHUNK_SIZE)
+		return;
+	blk[Chunk::XYZ(x+1, y+1, z+1, CHUNK_SIZE + 2)] = b;
 }

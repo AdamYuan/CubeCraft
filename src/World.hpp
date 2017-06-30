@@ -15,7 +15,13 @@ private:
 	bool minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b);
 	void chunkUpdateFunc();
 	void chunkLoadingFunc();
+
 	void setTerrain(glm::ivec3 chunkPos, block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]);
+	std::pair<std::vector<vert_block>, std::vector<vert_block>> GetMesh(
+			glm::ivec3 chunkPos,
+			const block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]
+	);
+
 
 	std::unordered_set<glm::ivec3> chunkLoadedSet;
 	std::unordered_set<glm::ivec3> chunkLoadingSet;

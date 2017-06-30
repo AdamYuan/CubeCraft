@@ -43,13 +43,6 @@ public:
 
 	void UpdateLighting();
 
-	static std::pair<std::vector<vert_block>, std::vector<vert_block>> GetMesh(
-			glm::ivec3 chunkPos,
-			const block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)]
-	);
-	static block GetBlockFromArray(block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)], int x, int y, int z);
-	static void SetBlockToArray(block (&blk)[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)], int x, int y, int z, block b);
-
 	bool UpdatedMesh=false;
 	bool UpdatedLight=false;
 

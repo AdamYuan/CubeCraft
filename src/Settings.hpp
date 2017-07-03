@@ -1,7 +1,6 @@
 #pragma once
 
-#define MOVE_DIST 1.0f
-#define ROTATE_DIST 0.4f
+#define MOVE_DIST 0.9f
 
 #define THREAD_NUM 3
 #define CHUNK_SIZE 32

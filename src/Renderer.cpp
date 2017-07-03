@@ -148,3 +148,33 @@ void Renderer::RenderText(const glm::vec2 &pos, const std::string &str,
 	text_obj.Render(GL_TRIANGLES);
 	glEnable(GL_DEPTH_TEST);
 }
+
+void Renderer::RenderSelectionBox()
+{
+	std::vector<float> vertices =
+			{
+					1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+					1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+					1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+					0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+					1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
+					0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+					1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,
+					0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+					1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+					1.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+			};
+
+	MyGL::VertexObject box;
+
+	box.SetDataVec(vertices);
+	box.SetAttributes(1, Resource::Attributes::Position, 3);
+
+	Resource::LineShader.Use();
+	Resource::LineShader.PassMat4(Resource::UniformMatrix,
+								  Game::matrices.Projection3d * Game::camera.GetViewMatrix() * glm::translate((glm::vec3)(Game::player.SelectedPosition)));
+
+	box.Render(GL_LINES);
+}

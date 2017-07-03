@@ -9,15 +9,17 @@ private:
 	bool _moveForward(float dist,int degree);
 	bool _moveUp(float dist);
 	bool isFloating(float delta);
+	void Physics();
 	bool jumping=false;
 	double lastGravityTime;
 public:
 	glm::vec3 Position=glm::vec3(0);
-	glm::ivec3 ChunkPos=glm::ivec3(INT_MAX);
+	glm::ivec3 ChunkPos=glm::ivec3(INT_MAX), SelectedPosition = glm::ivec3(INT_MAX);
 	void StartTimer();
 	bool MoveForward(float dist, int degree);
 	bool MoveUp(float dist);
 	void Jump();
-	void Physics();
-	void Update();
+	void UpdatePosition();
+	void UpdateSelectedPosition();
+
 };

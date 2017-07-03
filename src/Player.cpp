@@ -199,7 +199,7 @@ void Player::Physics()
 	}
 }
 
-void Player::Update()
+void Player::UpdatePosition()
 {
 	if(PHYSICS)
 		Physics();
@@ -211,4 +211,30 @@ void Player::Update()
 void Player::StartTimer()
 {
 	lastGravityTime = glfwGetTime();
+}
+
+void Player::UpdateSelectedPosition()
+{
+	float depth;
+	glm::mat4 mat;
+	glReadPixels(Game::Width / 2, Game::Height / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
+	glm::vec3 pos = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, depth),
+								   glm::mat4(), mat = Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
+								   glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
+	);
+	glm::vec3 unit = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, 0.0f),
+								   glm::mat4(), mat = Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
+								   glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
+	) - Position;
+
+	if(glm::distance(Position, pos) > 18.0f) {
+		SelectedPosition = glm::ivec3(INT_MAX);
+		return;
+	}
+
+	int counter = 0;
+	while(counter ++ < 4 && Game::world.Voxels.GetBlock(glm::floor(pos)) == Blocks::Air)
+		pos += unit;
+
+	SelectedPosition = glm::floor(pos);
 }

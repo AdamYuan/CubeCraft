@@ -3,17 +3,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 namespace MyGL
 {
-	void Camera::Lock()
-	{
-		if(Pitch > 90.0f)
-			Pitch = 90;
-		else if(Pitch < -90.0f)
-			Pitch = -90;
-		if(Yaw < 0.0f)
-			Yaw += 360;
-		else if(Yaw > 360.0f)
-			Yaw -= 360;
-	}
 	glm::mat4 Camera::GetViewMatrix()
 	{
 		glm::mat4 view;
@@ -32,5 +21,23 @@ namespace MyGL
 	void Camera::MoveUp(const float &dist)
 	{
 		Position.y += dist;
+	}
+
+	void Camera::ProcessMouseMovement(float xOffset, float yOffset)
+	{
+		xOffset *= MouseSensitivity;
+		yOffset *= MouseSensitivity;
+
+		Yaw   += xOffset;
+		Pitch += yOffset;
+
+		if(Pitch > 90.0f)
+			Pitch = 90;
+		else if(Pitch < -90.0f)
+			Pitch = -90;
+		if(Yaw < 0.0f)
+			Yaw += 360;
+		else if(Yaw > 360.0f)
+			Yaw -= 360;
 	}
 }

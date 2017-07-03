@@ -6,6 +6,7 @@ public:
 	enum TextStyle {regular=0, bold};
 	static void ApplyChunkMesh(ChunkPtr chk);
 	static void RenderWorld(World *wld);
+	static void RenderSelectionBox();
 	static void RenderCross();
 	static void RenderText(const glm::vec2 &pos, const std::string &str,
 						   int t_width, int t_height,

@@ -65,8 +65,6 @@ namespace Game
 
 		world.InitNoise();
 
-		//player.Position = {49, -206.5, 15};
-
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 		//set glfw event callbacks
@@ -101,7 +99,7 @@ namespace Game
 			else
 				glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-			player.Update();//Update Player data and SetBlock camera Position
+			player.UpdatePosition();//UpdatePosition Player data and SetBlock camera Position
 
 			frustum.CalculatePlanes(matrices.Projection3d * camera.GetViewMatrix());
 
@@ -123,10 +121,8 @@ namespace Game
 	}
 	void cursorPosCallback(GLFWwindow *, double xpos, double ypos)
 	{
-		if(!control) return;
-		camera.Yaw+=(Width / 2.0 - xpos) * ROTATE_DIST;
-		camera.Pitch+=(Height / 2.0 - ypos) * ROTATE_DIST;
-		camera.Lock();
+		if(! control) return;
+		camera.ProcessMouseMovement((float) (Width / 2.0 - xpos), (float) (Height / 2.0 - ypos));
 	}
 	void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 	{
@@ -163,7 +159,11 @@ namespace Game
 		glClearColor(0.6, 0.8, 1.0, 1);
 
 		Renderer::RenderWorld(&world);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		player.UpdateSelectedPosition();
+
+		//std::cout << Funcs::Vec3ToString(player.SelectedPosition) << std::endl;
+
+		Renderer::RenderSelectionBox();
 
 		Renderer::RenderCross();
 		std::string PositionInfo=" Position:" + Funcs::Vec3ToString(player.Position) +

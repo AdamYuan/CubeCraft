@@ -293,7 +293,7 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 {
 	std::vector<vert_block> TransMeshData, SolidMeshData;
 
-	static const int lookup3[6][4][3]=
+	const int lookup3[6][4][3]=
 			{
 					21, 18, 19, 21, 24, 25, 23, 26, 25, 23, 20, 19,
 					3, 0, 1, 5, 2, 1, 5, 8, 7, 3, 6, 7,
@@ -302,8 +302,8 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 					11, 2, 5, 11, 20, 23, 17, 26, 23, 17, 8, 5,
 					9, 0, 3, 15, 6, 3, 15, 24, 21, 9, 18, 21
 			};
-	static FaceLighting block_lightings[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE][6];
-	static block neighbours[27];
+	FaceLighting block_lightings[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE][6];
+	block neighbours[27];
 	//static light_t neighbours_li[27];
 
 	//calculate the lighting data of necessary face vertices

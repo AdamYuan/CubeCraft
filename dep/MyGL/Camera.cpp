@@ -23,10 +23,10 @@ namespace MyGL
 		Position.y += dist;
 	}
 
-	void Camera::ProcessMouseMovement(float xOffset, float yOffset)
+	void Camera::ProcessMouseMovement(float xOffset, float yOffset, float sensitivity)
 	{
-		xOffset *= MouseSensitivity;
-		yOffset *= MouseSensitivity;
+		xOffset *= sensitivity;
+		yOffset *= sensitivity;
 
 		Yaw   += xOffset;
 		Pitch += yOffset;

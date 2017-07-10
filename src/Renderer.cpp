@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Renderer.hpp"
 #include "Resource.hpp"
 #include "Game.hpp"
@@ -7,10 +8,10 @@ void Renderer::ApplyChunkMesh(ChunkPtr chk) {
 	//add the data array into the VAO,VBO
 	chk->SolidMeshObject->SetDataVec(chk->SolidMeshData);
 	chk->SolidMeshObject->SetAttributes(4,
-								  Resource::Attributes::Position, 3,
-								  Resource::Attributes::BTexture, 1,
-								  Resource::Attributes::BFacing, 1,
-								  Resource::Attributes::BLighting, 2);
+										Resource::Attributes::Position, 3,
+										Resource::Attributes::BTexture, 1,
+										Resource::Attributes::BFacing, 1,
+										Resource::Attributes::BLighting, 2);
 
 	chk->TransMeshObject->SetDataVec(chk->TransMeshData);
 	chk->TransMeshObject->SetAttributes(4,
@@ -50,11 +51,16 @@ void Renderer::RenderWorld(World *wld) {
 
 		visibleChunks.push_back(chk);
 	}
+	std::sort(visibleChunks.begin(), visibleChunks.end(),
+			  [=](const ChunkPtr &a, const ChunkPtr &b)
+			  {
+				  return glm::distance(glm::vec3(Game::player.ChunkPos), glm::vec3(a->ChunkPos)) <
+						  glm::distance(glm::vec3(Game::player.ChunkPos), glm::vec3(b->ChunkPos));
+			  });
 
 	glEnable(GL_POLYGON_OFFSET_FILL);
 
 	glPolygonOffset(1, 1);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	for(ChunkPtr chk : visibleChunks)
 		chk->SolidMeshObject->Render(GL_TRIANGLES);

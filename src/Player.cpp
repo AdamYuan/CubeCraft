@@ -215,26 +215,60 @@ void Player::StartTimer()
 
 void Player::UpdateSelectedPosition()
 {
-	float depth;
-	glm::mat4 mat;
-	glReadPixels(Game::Width / 2, Game::Height / 2, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-	glm::vec3 pos = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, depth),
-								   glm::mat4(), mat = Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
-								   glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
-	);
+	glm::vec3 pos = Position;
 	glm::vec3 unit = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, 0.0f),
-								   glm::mat4(), mat = Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
+								   glm::mat4(), Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
 								   glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
 	) - Position;
 
-	if(glm::distance(Position, pos) > 18.0f) {
-		SelectedPosition = glm::ivec3(INT_MAX);
-		return;
+
+	while(Game::world.Voxels.GetBlock(glm::floor(pos)) == Blocks::Air)
+	{
+		if(glm::distance(Position, pos) > 18.0f) {
+			SelectedPosition = glm::ivec3(INT_MAX);
+			return;
+		}
+		pos += unit;
 	}
 
-	int counter = 0;
-	while(counter ++ < 4 && Game::world.Voxels.GetBlock(glm::floor(pos)) == Blocks::Air)
-		pos += unit;
-
 	SelectedPosition = glm::floor(pos);
+
+#ifndef dti
+#define dti(val) (fabsf(val - roundf(val)))
+#endif
+
+	if(dti(pos.x) < dti(pos.y))
+	{
+		if(dti(pos.x) < dti(pos.z))
+		{
+			if(unit.x > 0)
+				SelectedFace=LEFT;
+			else
+				SelectedFace=RIGHT;
+		}
+		else
+		{
+			if(unit.z > 0)
+				SelectedFace=BACK;
+			else
+				SelectedFace=FRONT;
+		}
+	}
+	else
+	{
+		if(dti(pos.y) < dti(pos.z))
+		{
+			if(unit.y > 0)
+				SelectedFace=BOTTOM;
+			else
+				SelectedFace=TOP;
+		}
+		else
+		{
+			if(unit.z > 0)
+				SelectedFace=BACK;
+			else
+				SelectedFace=FRONT;
+		}
+	}
 }

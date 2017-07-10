@@ -46,10 +46,19 @@ void SuperChunk::EraseChunk(int x, int y, int z)
 
 void SuperChunk::SetBlock(const glm::ivec3 &pos, const block &blk)
 {
-	glm::ivec3 chunkPos= GetChunkPos(pos);
-	if(Chunks[chunkPos]==nullptr)
-		return;
-	GetChunk(chunkPos)->SetBlock(pos-(chunkPos*CHUNK_SIZE), blk);
+	glm::ivec3 chunkPos = GetChunkPos(pos);
+	glm::ivec3 blockPos = pos - (chunkPos * CHUNK_SIZE);
+
+	glm::ivec3 i;
+	for(i.x = -1; i.x <= 1; ++i.x)
+		for(i.y = -1; i.y <= 1; ++i.y)
+			for(i.z = -1; i.z <= 1; ++i.z)
+			{
+				glm::ivec3 _blockPos = blockPos - (i * CHUNK_SIZE);
+				ChunkPtr neighbour = GetChunk(chunkPos + i);
+				if(neighbour)
+					neighbour->SetBlock(_blockPos, blk);
+			}
 }
 void SuperChunk::SetBlock(int x, int y, int z, const block &blk)
 {

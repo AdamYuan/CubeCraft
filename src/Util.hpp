@@ -1,16 +1,12 @@
 #pragma once
+#include <climits>
+
+#define GLM_FORCE_AVX
 #include <glm/glm.hpp>
-#include <atomic>
-
-#ifndef GLM_HAS_CXX11_STL
-#define GLM_HAS_CXX11_STL 1
-#endif
 #include <glm/gtx/hash.hpp>
-
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define MAX_INT __INT_MAX__
 struct Box
 {
 	glm::vec3 Min, Max;

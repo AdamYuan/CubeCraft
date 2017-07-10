@@ -93,8 +93,10 @@ void World::chunkUpdateFunc()
 }
 void World::UpdateChunkLists()
 {
-	if(!bgMtx.try_lock())
-		return;
+	//if(!bgMtx.try_lock())
+	//	return;
+	bgMtx.lock();
+
 
 	ChunkRenderList.clear();
 	glm::ivec3 minLoadRange = Game::player.ChunkPos
@@ -152,14 +154,22 @@ void World::UpdateChunkLists()
 			chunkUpdateSet.insert(pos);
 		else if(!chk->SolidMeshData.empty() || !chk->TransMeshData.empty())
 		{
-			// chunk is meshed, then apply the mesh and clear the mesh array
-			Renderer::ApplyChunkMesh(chk);
+			bool update = true;
+			glm::ivec3 neighbour;
+			for(short f = 0; f < 6 && update; ++f)
+				if(Voxels.GetChunk(neighbour = pos + Funcs::GetFaceDirect(f)) && chunkUpdateSet.count(neighbour))
+					update = false;
+			if(update)
+			{
+				// chunk is meshed, then apply the mesh and clear the mesh array
+				Renderer::ApplyChunkMesh(chk);
 
-			chk->SolidMeshData.clear();
-			chk->SolidMeshData.shrink_to_fit();
+				chk->SolidMeshData.clear();
+				chk->SolidMeshData.shrink_to_fit();
 
-			chk->TransMeshData.clear();
-			chk->TransMeshData.shrink_to_fit();
+				chk->TransMeshData.clear();
+				chk->TransMeshData.shrink_to_fit();
+			}
 		}
 
 		if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())

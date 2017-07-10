@@ -18,12 +18,13 @@ namespace Game
 	MyGL::Frustum frustum;
 
 	extern void KeyControl();
+	extern void MouseControl();
 	extern void Render();
 
 	extern void framebufferSizeCallback(GLFWwindow *, int width, int height);
-	extern void cursorPosCallback(GLFWwindow *, double xpos, double ypos);
 	extern void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods);
 	extern void focusCallback(GLFWwindow*, int focused);
+	extern void mouseButtonCallback(GLFWwindow*, int button, int action, int mods);
 
 	void Init()
 	{
@@ -69,9 +70,9 @@ namespace Game
 
 		//set glfw event callbacks
 		glfwSetFramebufferSizeCallback(Window, framebufferSizeCallback);
-		glfwSetCursorPosCallback(Window, cursorPosCallback);
 		glfwSetKeyCallback(Window, keyCallback);
 		glfwSetWindowFocusCallback(Window, focusCallback);
+		glfwSetMouseButtonCallback(Window, mouseButtonCallback);
 
 		framebufferSizeCallback(Window, Width, Height);
 	}
@@ -93,13 +94,19 @@ namespace Game
 			if(control)
 			{
 				KeyControl();
+				MouseControl();
 				glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
-				glfwSetCursorPos(Window, Width/2.0, Height/2.0);
+				double x, y;
+				glfwGetCursorPos(Window, &x, &y);
+				camera.ProcessMouseMovement((float) (Width / 2 - x), (float) (Height / 2 - y),
+											MOUSE_SENSITIVITY);
+				glfwSetCursorPos(Window, Width / 2, Height / 2);
 			}
 			else
 				glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
 			player.UpdatePosition();//UpdatePosition Player data and SetBlock camera Position
+			player.UpdateSelectedPosition();
 
 			frustum.CalculatePlanes(matrices.Projection3d * camera.GetViewMatrix());
 
@@ -119,11 +126,6 @@ namespace Game
 		glViewport(0, 0, width, height);
 		matrices.UpdateMatrices(width, height);
 	}
-	void cursorPosCallback(GLFWwindow *, double xpos, double ypos)
-	{
-		if(! control) return;
-		camera.ProcessMouseMovement((float) (Width / 2.0 - xpos), (float) (Height / 2.0 - ypos));
-	}
 	void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods)
 	{
 		if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE)
@@ -132,6 +134,11 @@ namespace Game
 	void focusCallback(GLFWwindow*, int focused)
 	{
 		control = focused != 0;
+	}
+	void mouseButtonCallback(GLFWwindow*, int button, int action, int mods)
+	{
+		//if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+		//	world.Voxels.SetBlock(player.SelectedPosition, Blocks::Air);
 	}
 	void KeyControl()
 	{
@@ -153,18 +160,34 @@ namespace Game
 		if(glfwGetKey(Window, GLFW_KEY_LEFT_SHIFT) && !PHYSICS)
 			player.MoveUp(-MOVE_DIST);
 	}
+	void MouseControl()
+	{
+		static double i = 0;
+		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+			if(glfwGetTime() - i >= 0.2) {
+				world.Voxels.SetBlock(player.SelectedPosition, Blocks::Air);
+				i = glfwGetTime();
+			}
+		}
+		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+			if(glfwGetTime() - i >= 0.2) {
+				world.Voxels.SetBlock(player.SelectedPosition + Funcs::GetFaceDirect(player.SelectedFace), Blocks::Stone);
+				i = glfwGetTime();
+			}
+		}
+		else
+			i = glfwGetTime() - 1.0;
+	}
 	void Render()
 	{
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 		glClearColor(0.6, 0.8, 1.0, 1);
 
 		Renderer::RenderWorld(&world);
-		player.UpdateSelectedPosition();
 
 		//std::cout << Funcs::Vec3ToString(player.SelectedPosition) << std::endl;
 
 		Renderer::RenderSelectionBox();
-
 		Renderer::RenderCross();
 		std::string PositionInfo=" Position:" + Funcs::Vec3ToString(player.Position) +
 				" ChunkPos:" + Funcs::Vec3ToString(player.ChunkPos);

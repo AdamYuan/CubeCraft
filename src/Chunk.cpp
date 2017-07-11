@@ -304,7 +304,7 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 			};
 	FaceLighting block_lightings[CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE][6];
 	block neighbours[27];
-	//static light_t neighbours_li[27];
+	//light_t neighbours_li[27];
 
 	//calculate the lighting data of necessary face vertices
 	glm::ivec3 posi;

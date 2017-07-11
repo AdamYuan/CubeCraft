@@ -163,20 +163,29 @@ namespace Game
 	void MouseControl()
 	{
 		static double i = 0;
-		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
-			if(glfwGetTime() - i >= 0.2) {
+		static bool leftFirst, rightFirst;
+		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		{
+			rightFirst = true;
+			if(leftFirst || glfwGetTime() - i >= 0.2)
+			{
 				world.Voxels.SetBlock(player.SelectedPosition, Blocks::Air);
 				i = glfwGetTime();
+				leftFirst = false;
 			}
 		}
-		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
-			if(glfwGetTime() - i >= 0.2) {
+		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+		{
+			leftFirst = true;
+			if(rightFirst || glfwGetTime() - i >= 0.2)
+			{
 				world.Voxels.SetBlock(player.SelectedPosition + Funcs::GetFaceDirect(player.SelectedFace), Blocks::Stone);
 				i = glfwGetTime();
+				rightFirst = false;
 			}
 		}
 		else
-			i = glfwGetTime() - 1.0;
+			leftFirst = true, rightFirst = true;
 	}
 	void Render()
 	{

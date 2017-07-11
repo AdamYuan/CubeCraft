@@ -224,7 +224,7 @@ void Player::UpdateSelectedPosition()
 
 	while(Game::world.Voxels.GetBlock(glm::floor(pos)) == Blocks::Air)
 	{
-		if(glm::distance(Position, pos) > 18.0f) {
+		if(glm::distance(Position, pos) > 16.0f) {
 			SelectedPosition = glm::ivec3(INT_MAX);
 			return;
 		}

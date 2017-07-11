@@ -26,7 +26,7 @@ bool block_transparents[BLOCK_NUM]=
 		{
 				true,
 				false,
-                false,
+				false,
 				false,
 				true,
 				false,
@@ -34,9 +34,26 @@ bool block_transparents[BLOCK_NUM]=
 				false
 		};
 
+bool block_haveHitbox[BLOCK_NUM]=
+		{
+				false,
+				true,
+				true,
+				true,
+				false,
+				true,
+				true,
+				true
+		};
+
 bool BlockMethods::IsTransparent(block b)
 {
 	return block_transparents[b];
+}
+
+bool BlockMethods::HaveHitbox(block b)
+{
+	return block_haveHitbox[b];
 }
 
 int BlockMethods::GetTexture(block b, short face)
@@ -48,3 +65,4 @@ Box BlockMethods::GetBox(glm::ivec3 pos)
 {
 	return Box(pos,pos+1);
 }
+

@@ -115,7 +115,7 @@ namespace Game
 			Render();
 
 			//swap window
-			glfwSwapInterval(1);
+			//glfwSwapInterval(1);
 			glfwSwapBuffers(Window);
 		}
 	}

@@ -66,7 +66,7 @@ bool Player::hitTest(short face,bool doAction=true)
 				block_pos.z=search[!use_max][2];
 				block_pos.x=i,block_pos.y=j;
 			}
-			if(Game::world.Voxels.GetBlock(block_pos)==Blocks::Air)
+			if(!BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(block_pos)))
 				continue;
 			Box block_box;
 			if(Funcs::Intersect(block_box = BlockMethods::GetBox(block_pos), movedPlayerBox))
@@ -222,7 +222,7 @@ void Player::UpdateSelectedPosition()
 	) - Position;
 
 
-	while(Game::world.Voxels.GetBlock(glm::floor(pos)) == Blocks::Air)
+	while(!BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(glm::floor(pos))))
 	{
 		if(glm::distance(Position, pos) > 16.0f) {
 			SelectedPosition = glm::ivec3(INT_MAX);

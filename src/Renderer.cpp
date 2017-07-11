@@ -65,12 +65,14 @@ void Renderer::RenderWorld(World *wld) {
 	for(ChunkPtr chk : visibleChunks)
 		chk->SolidMeshObject->Render(GL_TRIANGLES);
 
+	glDepthMask(GL_FALSE);
 	glDisable(GL_CULL_FACE);
 	for(ChunkPtr chk : visibleChunks)
 		chk->TransMeshObject->Render(GL_TRIANGLES);
 	glEnable(GL_CULL_FACE);
 
 	glDisable(GL_POLYGON_OFFSET_FILL);
+	glDepthMask(GL_TRUE);
 }
 
 void Renderer::RenderCross() {

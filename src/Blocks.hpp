@@ -18,9 +18,8 @@ enum Blocks
 //extern int block_textures[BLOCK_NUM][6];
 namespace BlockMethods
 {
-
-extern bool IsTransparent(block b);
-extern int GetTexture(block b, short face);
-extern Box GetBox(glm::ivec3 pos);
-
+	extern bool IsTransparent(block b);
+	extern bool HaveHitbox(block b);
+	extern int GetTexture(block b, short face);
+	extern Box GetBox(glm::ivec3 pos);
 };

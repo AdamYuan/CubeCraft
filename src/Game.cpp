@@ -167,7 +167,7 @@ namespace Game
 		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{
 			rightFirst = true;
-			if(leftFirst || glfwGetTime() - i >= 0.2)
+			if(leftFirst || glfwGetTime() - i >= 0.18)
 			{
 				world.Voxels.SetBlock(player.SelectedPosition, Blocks::Air);
 				i = glfwGetTime();
@@ -177,9 +177,9 @@ namespace Game
 		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		{
 			leftFirst = true;
-			if(rightFirst || glfwGetTime() - i >= 0.2)
+			if(rightFirst || glfwGetTime() - i >= 0.18)
 			{
-				world.Voxels.SetBlock(player.SelectedPosition + Funcs::GetFaceDirect(player.SelectedFace), Blocks::Stone);
+				world.Voxels.SetBlock(player.SelectedPosition + player.SelectedFaceVec, Blocks::Stone);
 				i = glfwGetTime();
 				rightFirst = false;
 			}

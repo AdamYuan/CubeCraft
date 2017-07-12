@@ -14,8 +14,7 @@ private:
 	double lastGravityTime;
 public:
 	glm::vec3 Position=glm::vec3(0);
-	glm::ivec3 ChunkPos=glm::ivec3(INT_MAX), SelectedPosition = glm::ivec3(INT_MAX);
-	short SelectedFace = FRONT;
+	glm::ivec3 ChunkPos=glm::ivec3(INT_MAX), SelectedPosition = glm::ivec3(INT_MAX), SelectedFaceVec;
 	void StartTimer();
 	bool MoveForward(float dist, int degree);
 	bool MoveUp(float dist);

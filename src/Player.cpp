@@ -213,62 +213,112 @@ void Player::StartTimer()
 	lastGravityTime = glfwGetTime();
 }
 
+float intBound(float s, float ds) {
+	bool sIsInteger = glm::round(s) == s;
+	if (ds < 0 && sIsInteger)
+		return 0;
+
+	return (ds > 0 ? (s == 0.0f ? 1.0f : glm::ceil(s)) - s : s - glm::floor(s)) / glm::abs(ds);
+}
 void Player::UpdateSelectedPosition()
 {
-	glm::vec3 pos = Position;
-	glm::vec3 unit = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, 0.0f),
-								   glm::mat4(), Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
-								   glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
-	) - Position;
+	float radius = 18.0f;
 
+	glm::vec3 origin = Position;
+	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
+	// by John Amanatides and Andrew Woo, 1987
+	// <http://www.cse.yorku.ca/~amana/research/grid.pdf>
+	// <http://citeseer.ist.psu.edu/viewdoc/summary?doi=10.1.1.42.3443>
+	// Extensions to the described algorithm:
+	//   • Imposed a distance limit.
+	//   • The face passed through to reach the current cube is provided to
+	//     the callback.
 
-	while(!BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(glm::floor(pos))))
+	// The foundation of this algorithm is a parameterized representation of
+	// the provided ray,
+	//                    origin + t * direction,
+	// except that t is not actually stored; rather, at any given point in the
+	// traversal, we keep track of the *greater* t values which we would have
+	// if we took a step sufficient to cross a cube boundary along that axis
+	// (i.e. change the integer part of the coordinate) in the variables
+	// tMaxX, tMaxY, and tMaxZ.
+
+	// Cube containing origin point.
+	glm::vec3 xyz = glm::floor(origin);
+	// Break out direction vector.
+	glm::vec3 direction = glm::unProject(glm::vec3(Game::Width / 2.0f, Game::Height / 2.0f, 1.0f),
+									glm::mat4(), Game::matrices.Projection3d * Game::camera.GetViewMatrix(),
+									glm::vec4(0.0f, 0.0f, (float)Game::Width, (float)Game::Height)
+	) - origin;
+	// Direction to increment x,y,z when stepping.
+	glm::vec3 step = glm::sign(direction);
+	// See description above. The initial values depend on the fractional
+	// part of the origin.
+	glm::vec3 tMax = glm::vec3(intBound(origin.x, direction.x),
+							   intBound(origin.y, direction.y),
+							   intBound(origin.z, direction.z));
+	// The change in t when taking a step (always positive).
+	glm::vec3 tDelta = step / direction;
+	// Buffer for reporting faces to the callback.
+	glm::vec3 face;
+
+	// Rescale from units of 1 cube-edge to units of 'direction' so we can
+	// compare with 't'.
+	radius /= glm::sqrt(direction.x*direction.x + direction.y*direction.y + direction.z*direction.z);
+
+	while (true)
 	{
-		if(glm::distance(Position, pos) > 16.0f) {
-			SelectedPosition = glm::ivec3(INT_MAX);
+		// Invoke the callback, unless we are not *yet* within the bounds of the
+		// world.
+		if (BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(xyz))) {
+			SelectedPosition = xyz;
+			SelectedFaceVec = face;
 			return;
 		}
-		pos += unit;
+
+		// tMaxX stores the t-value at which we cross a cube boundary along the
+		// X axis, and similarly for Y and Z. Therefore, choosing the least tMax
+		// chooses the closest cube boundary. Only the first case of the four
+		// has been commented in detail.
+		if (tMax.x < tMax.y) {
+			if (tMax.x < tMax.z) {
+				if (tMax.x > radius) break;
+				// Update which cube we are now in.
+				xyz.x += step.x;
+				// Adjust tMaxX to the next X-oriented boundary crossing.
+				tMax.x += tDelta.x;
+				// Record the normal vector of the cube face we entered.
+				face[0] = -step.x;
+				face[1] = 0;
+				face[2] = 0;
+			} else {
+				if (tMax.z > radius) break;
+				xyz.z += step.z;
+				tMax.z += tDelta.z;
+				face[0] = 0;
+				face[1] = 0;
+				face[2] = -step.z;
+			}
+		} else {
+			if (tMax.y < tMax.z) {
+				if (tMax.y > radius) break;
+				xyz.y += step.y;
+				tMax.y += tDelta.y;
+				face[0] = 0;
+				face[1] = -step.y;
+				face[2] = 0;
+			} else {
+				// Identical to the second case, repeated for simplicity in
+				// the conditionals.
+				if (tMax.z > radius) break;
+				xyz.z += step.z;
+				tMax.z += tDelta.z;
+				face[0] = 0;
+				face[1] = 0;
+				face[2] = -step.z;
+			}
+		}
 	}
 
-	SelectedPosition = glm::floor(pos);
-
-#ifndef dti
-#define dti(val) (fabsf(val - roundf(val)))
-#endif
-
-	if(dti(pos.x) < dti(pos.y))
-	{
-		if(dti(pos.x) < dti(pos.z))
-		{
-			if(unit.x > 0)
-				SelectedFace=LEFT;
-			else
-				SelectedFace=RIGHT;
-		}
-		else
-		{
-			if(unit.z > 0)
-				SelectedFace=BACK;
-			else
-				SelectedFace=FRONT;
-		}
-	}
-	else
-	{
-		if(dti(pos.y) < dti(pos.z))
-		{
-			if(unit.y > 0)
-				SelectedFace=BOTTOM;
-			else
-				SelectedFace=TOP;
-		}
-		else
-		{
-			if(unit.z > 0)
-				SelectedFace=BACK;
-			else
-				SelectedFace=FRONT;
-		}
-	}
+	SelectedPosition = glm::ivec3(INT_MAX);
 }

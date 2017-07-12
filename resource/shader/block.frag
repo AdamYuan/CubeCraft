@@ -38,12 +38,12 @@ void main()
 
 	color = texture(sampler, coord3d);
 
-	if(color.w==0.0f) //do not draw if there were nothing
+	if(color.a==0.0f) //do not draw if there were nothing
 		discard;
 
 	float intensity=intensities[f];
 
-	color.xyz*=frag_ao*frag_light*intensity;
+	color.rgb*=frag_ao*frag_light*intensity;
 
 	color = mix(color, sky_color, fog_factor);
 }

@@ -12,14 +12,9 @@ bool World::minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b)
 	if(b.x == INT_MAX) return true;
 	float af = Game::frustum.CubeInFrustum(a*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
 	float bf = Game::frustum.CubeInFrustum(b*CHUNK_SIZE + CHUNK_SIZE/2, CHUNK_SIZE/2);
-	float al = glm::length((glm::vec3)(Game::player.ChunkPos - a));
-	float bl = glm::length((glm::vec3)(Game::player.ChunkPos - b));
+	float al = glm::length(glm::vec3(Game::player.ChunkPos - a));
+	float bl = glm::length(glm::vec3(Game::player.ChunkPos - b));
 	return al/(af + 1.0f) < bl/(bf + 1.0f);
-}
-void World::InitNoise()
-{
-	fastNoise = FastNoiseSIMD::NewFastNoiseSIMD(0);
-	fastNoise->SetFractalOctaves(4);
 }
 void World::chunkLoadingFunc()
 {
@@ -40,7 +35,7 @@ void World::chunkLoadingFunc()
 	block blk[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)];
 	std::uninitialized_fill(std::begin(blk), std::end(blk), Blocks::Air);
 
-	ChunkFuncs::SetTerrain(pos, blk, fastNoise);
+	ChunkFuncs::SetTerrain(pos, blk, 0);
 
 	bgMtx.lock();
 	ChunkPtr chk = Voxels.GetChunk(pos);
@@ -157,7 +152,7 @@ void World::UpdateChunkLists()
 			bool update = true;
 			glm::ivec3 neighbour;
 			for(short f = 0; f < 6 && update; ++f)
-				if(Voxels.GetChunk(neighbour = pos + Funcs::GetFaceDirect(f)) && chunkUpdateSet.count(neighbour))
+				if(Voxels.GetChunk(neighbour = pos + Util::GetFaceDirect(f)) && chunkUpdateSet.count(neighbour))
 					update = false;
 			if(update)
 			{

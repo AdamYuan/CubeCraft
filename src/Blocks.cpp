@@ -46,22 +46,22 @@ bool block_haveHitbox[BLOCK_NUM]=
 				true
 		};
 
-bool BlockMethods::IsTransparent(block b)
+bool BlockUtil::IsTransparent(block b)
 {
 	return block_transparents[b];
 }
 
-bool BlockMethods::HaveHitbox(block b)
+bool BlockUtil::HaveHitbox(block b)
 {
 	return block_haveHitbox[b];
 }
 
-int BlockMethods::GetTexture(block b, short face)
+int BlockUtil::GetTexture(block b, short face)
 {
 	return block_textures[b][face];
 }
 
-Box BlockMethods::GetBox(glm::ivec3 pos)
+Box BlockUtil::GetBox(glm::ivec3 pos)
 {
 	return Box(pos,pos+1);
 }

@@ -12,17 +12,19 @@ struct Box
 	glm::vec3 Min, Max;
 	Box() = default;
 	Box(glm::vec3 mi, glm::vec3 ma) : Min(mi), Max(ma){}
+	Box operator+ (const glm::vec3 &v) const;
 	glm::vec3 GetCenter();
 };
 typedef int8_t light_t;
+
 struct vert_block
 {
-	float x,y,z,tex,face,ao,lighting;
+	float x, y, z, u, v, tex, face, ao, lighting;
 };
 
 struct vert_text
 {
-	float x,y,coordx,coordy;
+	float x, y, coordx, coordy;
 };
 
 struct FaceLighting
@@ -68,9 +70,9 @@ struct FaceLighting
 
 
 enum{RIGHT=0,LEFT,TOP,BOTTOM,FRONT,BACK};
-namespace Funcs
+namespace Util
 {
-	extern bool Intersect(Box a, Box b, bool touchForTrue = false);
+	extern bool Intersect(Box a, Box b);
 	extern glm::ivec3 GetFaceDirect(short face);
 	template <typename T>
 	inline int Sign(T val)

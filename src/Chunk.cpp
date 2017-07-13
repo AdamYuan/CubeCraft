@@ -141,9 +141,9 @@ void Chunk::UpdateLighting()
 
 		for(short face=0; face<6; ++face)
 		{
-			glm::ivec3 np = glm::ivec3(x,y,z) + Funcs::GetFaceDirect(face);//new Position
+			glm::ivec3 np = glm::ivec3(x,y,z) + Util::GetFaceDirect(face);//new Position
 
-			if (BlockMethods::IsTransparent(GetBlock(np)) && GetLight(np) + 2 <= lightValue && lightValue > 0)
+			if (BlockUtil::IsTransparent(GetBlock(np)) && GetLight(np) + 2 <= lightValue && lightValue > 0)
 			{
 				sunLightBfsQueue.push({np, (light_t)(lightValue - 1)});
 				SetLight(np, (light_t) (lightValue - 1));
@@ -187,7 +187,7 @@ glm::ivec3 ChunkFuncs::GetPosFromNum(int num)
 void ChunkFuncs::SetTerrain(
 		glm::ivec3 chunkPos,
 		block (&blk)[(CHUNK_SIZE + 2) * (CHUNK_SIZE + 2) * (CHUNK_SIZE + 2)],
-		FastNoiseSIMD *fastNoise
+		unsigned long seed
 )
 {
 #define SCALE 45
@@ -204,6 +204,9 @@ void ChunkFuncs::SetTerrain(
 		std::fill(std::begin(blk), std::end(blk), Blocks::Stone);
 		return;
 	}
+
+	FastNoiseSIMD *fastNoise = FastNoiseSIMD::NewFastNoiseSIMD(seed);
+	fastNoise->SetFractalOctaves(4);
 
 	fastNoise->SetFrequency(0.001f);
 	float* heightNoiseSet = fastNoise->GetSimplexFractalSet(chunkPos.x * CHUNK_SIZE - 2, chunkPos.z * CHUNK_SIZE - 2, 0,
@@ -318,8 +321,8 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 		bool first_face = true;
 		for(short face=0; face<6; ++face)
 		{
-			block bn = getBlockIVec3(posi), bf = getBlockIVec3(posi + Funcs::GetFaceDirect(face));
-			bool trans_n= BlockMethods::IsTransparent(bn), trans_f= BlockMethods::IsTransparent(bf);
+			block bn = getBlockIVec3(posi), bf = getBlockIVec3(posi + Util::GetFaceDirect(face));
+			bool trans_n= BlockUtil::IsTransparent(bn), trans_f= BlockUtil::IsTransparent(bf);
 			if(!trans_n && !trans_f)
 				continue;
 			if(trans_n && bf!=Blocks::Air)
@@ -344,19 +347,19 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 						corner = neighbours[lookup3[face][vertex][1]],
 						side2 = neighbours[lookup3[face][vertex][2]];
 
-				bool b1 = !BlockMethods::IsTransparent(side1),
-						bc = !BlockMethods::IsTransparent(corner),
-						b2 = !BlockMethods::IsTransparent(side2);
+				bool b1 = !BlockUtil::IsTransparent(side1),
+						bc = !BlockUtil::IsTransparent(corner),
+						b2 = !BlockUtil::IsTransparent(side2);
 
 				block_lightings[ChunkFuncs::XYZ3(posi, CHUNK_SIZE)][face].AO[vertex] = b1 && b2 ? 0 : 3 - b1 - b2 - bc;
 
-				/*light_t center_l = GetLight(posi + Funcs::GetFaceDirect(face));
+				/*light_t center_l = GetLight(posi + Util::GetFaceDirect(face));
 
 				//smooth the Light using the average value
 				int sum=1, sum_li=center_l;
 				bool isSolid[3];
 				for(int nn=0; nn<3; ++nn)
-					isSolid[nn] = !BlockMethods::IsTransparent(neighbours[lookup3[face][vertex][nn]]);
+					isSolid[nn] = !BlockUtil::IsTransparent(neighbours[lookup3[face][vertex][nn]]);
 
 				if(!isSolid[0] || !isSolid[2])
 					for(int nn=0; nn<3; ++nn)
@@ -397,8 +400,8 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 					const bool canput_a=(0 <= x[axis]);
 					const bool canput_b=(x[axis] < CHUNK_SIZE-1);
 
-					const bool trans_a = BlockMethods::IsTransparent(a);
-					const bool trans_b = BlockMethods::IsTransparent(b);
+					const bool trans_a = BlockUtil::IsTransparent(a);
+					const bool trans_b = BlockUtil::IsTransparent(b);
 
 					const int index_a=x[0]+CHUNK_SIZE*(x[1]+CHUNK_SIZE*x[2]);
 					const int index_b=(x[0]+q[0])+CHUNK_SIZE*((x[1]+q[1])+CHUNK_SIZE*(x[2]+q[2]));
@@ -490,18 +493,26 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 							dv[u] = width+TJUNC_DELTA*2.0f;
 						}
 
-						int tex= BlockMethods::GetTexture((block) c, f);
+						int tex= BlockUtil::GetTexture((block) c, f);
 						float vx=chunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
 								vy=chunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
 								vz=chunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;
-						vert_block v00={vx, vy, vz,
+
+						vert_block v00={vx, vy, vz, du[u]+dv[u], du[v]+dv[v],
 										(float)tex,(float)f,(float)fli.AO[0],(float)fli.Light[0]};
-						vert_block v01={vx + du[0], vy + du[1], vz + du[2],
+						vert_block v01={vx + du[0], vy + du[1], vz + du[2], dv[u], dv[v],
 										(float)tex,(float)f,(float)fli.AO[1],(float)fli.Light[1]};
-						vert_block v10={vx + du[0] + dv[0], vy + du[1] + dv[1], vz + du[2] + dv[2],
+						vert_block v10={vx + du[0] + dv[0], vy + du[1] + dv[1], vz + du[2] + dv[2], 0.0f, 0.0f,
 										(float)tex,(float)f,(float)fli.AO[2],(float)fli.Light[2]};
-						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2],
+						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2], du[u], du[v],
 										(float)tex,(float)f,(float)fli.AO[3],(float)fli.Light[3]};
+
+						if(f == LEFT || f == RIGHT)
+						{
+							std::swap(v11.u, v11.v);
+							std::swap(v01.u, v01.v);
+							std::swap(v00.u, v00.v);
+						}
 
 						/*bool flip=(fli.AO[0]==fli.AO[1] && fli.AO[1]==fli.AO[2] && fli.AO[2]==fli.AO[3])?
 								  (fli.Light[0]+fli.Light[2] > fli.Light[1]+fli.Light[3]):
@@ -510,6 +521,11 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 
 						//bool flip=(fli.AO[0]+fli.Light[0]+fli.AO[2]+fli.Light[2] >
 						//		   fli.AO[1]+fli.Light[1]+fli.AO[3]+fli.Light[3]);
+						std::vector<vert_block> *Target;
+						if(c == Blocks::Water)
+							Target = &TransMeshData;
+						else
+							Target = &SolidMeshData;
 						if(flip)
 						{
 							//11--------10
@@ -517,26 +533,13 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 							//|    /    |
 							//| /       |
 							//00--------01
-							if(c == Blocks::Water)
-							{
-								TransMeshData.push_back(v00);
-								TransMeshData.push_back(v01);
-								TransMeshData.push_back(v10);
+							Target->push_back(v00);
+							Target->push_back(v01);
+							Target->push_back(v10);
 
-								TransMeshData.push_back(v00);
-								TransMeshData.push_back(v10);
-								TransMeshData.push_back(v11);
-							}
-							else
-							{
-								SolidMeshData.push_back(v00);
-								SolidMeshData.push_back(v01);
-								SolidMeshData.push_back(v10);
-
-								SolidMeshData.push_back(v00);
-								SolidMeshData.push_back(v10);
-								SolidMeshData.push_back(v11);
-							}
+							Target->push_back(v00);
+							Target->push_back(v10);
+							Target->push_back(v11);
 						}
 						else
 						{
@@ -545,26 +548,13 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 							//|    \    |
 							//|       \ |
 							//00--------01
-							if(c == Blocks::Water)
-							{
-								TransMeshData.push_back(v01);
-								TransMeshData.push_back(v10);
-								TransMeshData.push_back(v11);
+							Target->push_back(v01);
+							Target->push_back(v10);
+							Target->push_back(v11);
 
-								TransMeshData.push_back(v00);
-								TransMeshData.push_back(v01);
-								TransMeshData.push_back(v11);
-							}
-							else
-							{
-								SolidMeshData.push_back(v01);
-								SolidMeshData.push_back(v10);
-								SolidMeshData.push_back(v11);
-
-								SolidMeshData.push_back(v00);
-								SolidMeshData.push_back(v01);
-								SolidMeshData.push_back(v11);
-							}
+							Target->push_back(v00);
+							Target->push_back(v01);
+							Target->push_back(v11);
 						}
 
 						for (std::size_t b = 0; b < width; ++b)

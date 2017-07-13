@@ -64,8 +64,6 @@ namespace Game
 
 		srand((unsigned int)time(0));
 
-		world.InitNoise();
-
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
 		//set glfw event callbacks
@@ -78,7 +76,7 @@ namespace Game
 	}
 	void Loop()
 	{
-		int last=0;
+		int last = -1;
 
 		player.StartTimer();
 		while(!glfwWindowShouldClose(Window))
@@ -177,7 +175,9 @@ namespace Game
 		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
 		{
 			leftFirst = true;
-			if(rightFirst || glfwGetTime() - i >= 0.18)
+			if((rightFirst || glfwGetTime() - i >= 0.18) &&
+					!Util::Intersect(Box(player.PlayerBox.Min + HITTEST_DELTA, player.PlayerBox.Max - HITTEST_DELTA) + player.Position,
+									 BlockUtil::GetBox(player.SelectedPosition + player.SelectedFaceVec)))
 			{
 				world.Voxels.SetBlock(player.SelectedPosition + player.SelectedFaceVec, Blocks::Stone);
 				i = glfwGetTime();
@@ -194,13 +194,20 @@ namespace Game
 
 		Renderer::RenderWorld(&world);
 
-		//std::cout << Funcs::Vec3ToString(player.SelectedPosition) << std::endl;
+		//std::cout << Util::Vec3ToString(player.SelectedPosition) << std::endl;
 
 		Renderer::RenderSelectionBox();
 		Renderer::RenderCross();
-		std::string PositionInfo=" Position:" + Funcs::Vec3ToString(player.Position) +
-				" ChunkPos:" + Funcs::Vec3ToString(player.ChunkPos);
-		Renderer::RenderText(glm::vec2(0), FpsInfo + PositionInfo, 10, 20,
+		std::string PositionInfo1 = "Position:" + Util::Vec3ToString(player.Position);
+		std::string PositionInfo2 = "ChunkPos:" + Util::Vec3ToString(player.ChunkPos) +
+				" SelectedPos:" + (player.SelectedPosition.x == INT_MAX ? "NULL" : Util::Vec3ToString(player.SelectedPosition));
+		Renderer::RenderText(glm::vec2(0), FpsInfo, 10, 20,
+							 glm::vec4(1), glm::vec4(0, 0, 0, 0.3f), matrices.Matrix2d,
+							 Renderer::TextStyle::regular);
+		Renderer::RenderText(glm::vec2(0, 20), PositionInfo1, 10, 20,
+							 glm::vec4(1), glm::vec4(0, 0, 0, 0.3f), matrices.Matrix2d,
+							 Renderer::TextStyle::regular);
+		Renderer::RenderText(glm::vec2(0, 40), PositionInfo2, 10, 20,
 							 glm::vec4(1), glm::vec4(0, 0, 0, 0.3f), matrices.Matrix2d,
 							 Renderer::TextStyle::regular);
 	}

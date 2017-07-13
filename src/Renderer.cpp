@@ -9,14 +9,14 @@ void Renderer::ApplyChunkMesh(ChunkPtr chk) {
 	chk->SolidMeshObject->SetDataVec(chk->SolidMeshData);
 	chk->SolidMeshObject->SetAttributes(4,
 										Resource::Attributes::Position, 3,
-										Resource::Attributes::BTexture, 1,
+										Resource::Attributes::Texcoord, 3,
 										Resource::Attributes::BFacing, 1,
 										Resource::Attributes::BLighting, 2);
 
 	chk->TransMeshObject->SetDataVec(chk->TransMeshData);
 	chk->TransMeshObject->SetAttributes(4,
 										Resource::Attributes::Position, 3,
-										Resource::Attributes::BTexture, 1,
+										Resource::Attributes::Texcoord, 3,
 										Resource::Attributes::BFacing, 1,
 										Resource::Attributes::BLighting, 2);
 }

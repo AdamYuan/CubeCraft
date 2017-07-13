@@ -12,4 +12,4 @@
 #define PHYSICS true
 #define HITTEST_DELTA 0.001f
 #define MAX_MOVE_DIST 16.0f
-#define TJUNC_DELTA 0.00f //dealing with t-junction
+#define TJUNC_DELTA 0.001f //dealing with t-junction

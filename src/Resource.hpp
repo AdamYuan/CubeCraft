@@ -22,9 +22,8 @@ namespace Resource
 	{
 		Position = 0,
 		Texcoord = 1,
-		BTexture = 2,
-		BFacing = 3,
-		BLighting = 4
+		BFacing = 2,
+		BLighting = 3
 	};
 	extern std::string UniformMatrix, UniformSampler;
 //block shader

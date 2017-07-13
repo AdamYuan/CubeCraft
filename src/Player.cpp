@@ -1,15 +1,15 @@
 #include "Player.hpp"
 #include "Game.hpp"
 
-bool Player::hitTest(short face,bool doAction=true)
+bool Player::hitTest(short face, bool doAction=true)
 {
-	Box movedPlayerBox(playerBox.Min + Position, playerBox.Max + Position);
+	Box movedPlayerBox(PlayerBox.Min + Position, PlayerBox.Max + Position);
 	const int *mas=glm::value_ptr(static_cast<glm::ivec3>(
 										  glm::floor(movedPlayerBox.Max - HITTEST_DELTA))),//Max search
 			*mis=glm::value_ptr(static_cast<glm::ivec3>(
 										glm::floor(movedPlayerBox.Min + HITTEST_DELTA)));//Min search
 	const int search[2][3]={{mis[0],mis[1],mis[2]},{mas[0],mas[1],mas[2]}};
-	bool use_max=!(face % 2);//is positive face ?
+	bool use_max = !(face % 2);//is positive face ?
 	short search_axis, i_axis, j_axis;
 	search_axis = (short) (face / 2);//is face of x,y or z
 	if(search_axis==0)
@@ -66,19 +66,19 @@ bool Player::hitTest(short face,bool doAction=true)
 				block_pos.z=search[!use_max][2];
 				block_pos.x=i,block_pos.y=j;
 			}
-			if(!BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(block_pos)))
+			if(!BlockUtil::HaveHitbox(Game::world.Voxels.GetBlock(block_pos)))
 				continue;
 			Box block_box;
-			if(Funcs::Intersect(block_box = BlockMethods::GetBox(block_pos), movedPlayerBox))
+			if(Util::Intersect(block_box = BlockUtil::GetBox(block_pos), movedPlayerBox))
 			{
 				if(doAction)
 				{
 					if(search_axis==0)
-						Position.x= block_box.GetCenter().x+(use_max?1:-1)*backward;
+						Position.x = block_box.GetCenter().x+(use_max?1:-1)*backward;
 					else if(search_axis==1)
-						Position.y= block_box.GetCenter().y+(use_max?1:-1)*backward;
+						Position.y = block_box.GetCenter().y+(use_max?1:-1)*backward;
 					else if(search_axis==2)
-						Position.z= block_box.GetCenter().z+(use_max?1:-1)*backward;
+						Position.z = block_box.GetCenter().z+(use_max?1:-1)*backward;
 				}
 				return true;
 			}
@@ -102,7 +102,7 @@ bool Player::_moveForward(float dist, int degree)
 	{
 		bool return_v=false;
 
-		int sign= Funcs::Sign(dist);
+		int sign= Util::Sign(dist);
 		if(std::fabs(dist) > MAX_MOVE_DIST)//deal with too big movement
 			dist=sign*MAX_MOVE_DIST;
 		double integer;
@@ -139,7 +139,7 @@ bool Player::_moveUp(float dist)
 	{
 		bool return_v=false;
 
-		int sign= Funcs::Sign(dist);
+		int sign= Util::Sign(dist);
 		if(std::fabs(dist) > MAX_MOVE_DIST)
 			dist=sign*MAX_MOVE_DIST;
 		double integer;
@@ -213,16 +213,15 @@ void Player::StartTimer()
 	lastGravityTime = glfwGetTime();
 }
 
-float intBound(float s, float ds) {
+inline float intBound(float s, float ds) {
 	bool sIsInteger = glm::round(s) == s;
 	if (ds < 0 && sIsInteger)
 		return 0;
-
 	return (ds > 0 ? (s == 0.0f ? 1.0f : glm::ceil(s)) - s : s - glm::floor(s)) / glm::abs(ds);
 }
 void Player::UpdateSelectedPosition()
 {
-	float radius = 18.0f;
+	float radius = 10.0f;
 
 	glm::vec3 origin = Position;
 	// From "A Fast Voxel Traversal Algorithm for Ray Tracing"
@@ -270,7 +269,7 @@ void Player::UpdateSelectedPosition()
 	{
 		// Invoke the callback, unless we are not *yet* within the bounds of the
 		// world.
-		if (BlockMethods::HaveHitbox(Game::world.Voxels.GetBlock(xyz))) {
+		if (BlockUtil::HaveHitbox(Game::world.Voxels.GetBlock(xyz))) {
 			SelectedPosition = xyz;
 			SelectedFaceVec = face;
 			return;

@@ -1,6 +1,6 @@
 #version 330 core
 in vec3 pos;
-in float frag_tex;
+in vec3 texcoord;
 in float frag_face;
 in float frag_ao;
 in float frag_light;
@@ -27,16 +27,8 @@ void main()
 	fog_height = (atan(dy, dx) + pi / 2) / pi;
 
 	int f=int(frag_face+0.5);
-	int t=int(frag_tex+0.5);
 
-	vec3 coord3d;
-	coord3d.z=t;
-	if(f==2 || f==3) //top or bottom
-		coord3d.xy=vec2(fract(pos.x), fract(pos.z));
-	else
-		coord3d.xy=vec2(fract(pos.x+pos.z), 1-fract(pos.y));
-
-	color = texture(sampler, coord3d);
+	color = texture(sampler, texcoord);
 
 	if(color.a==0.0f) //do not draw if there were nothing
 		discard;

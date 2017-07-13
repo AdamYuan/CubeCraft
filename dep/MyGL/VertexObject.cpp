@@ -11,8 +11,8 @@ namespace MyGL
 	}
 	void VertexObject::clear()
 	{
-		glDeleteVertexArrays(1, &VAO);
 		glDeleteBuffers(1, &VBO);
+		glDeleteVertexArrays(1, &VAO);
 	}
 	VertexObject::~VertexObject()
 	{
@@ -58,7 +58,6 @@ namespace MyGL
 		endRecord();
 
 		Elements = DataNum / AttributesLength;
-
 	}
 	void VertexObject::Render(GLenum mode)
 	{

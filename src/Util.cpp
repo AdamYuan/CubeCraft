@@ -15,22 +15,23 @@ glm::vec3 Box::GetCenter()
 	return (Min+Max)/2.0f;
 }
 
-bool Funcs::Intersect(Box a, Box b, bool touchForTrue)
+Box Box::operator+(const glm::vec3 &v) const
 {
-	if(touchForTrue)
-		return (a.Min.x <= b.Max.x && a.Max.x >= b.Min.x) &&
-				(a.Min.y <= b.Max.y && a.Max.y >= b.Min.y) &&
-				(a.Min.z <= b.Max.z && a.Max.z >= b.Min.z);
+	return Box(Min+v, Max+v);
+}
+
+bool Util::Intersect(Box a, Box b)
+{
 	return (a.Min.x < b.Max.x && a.Max.x > b.Min.x) &&
 			(a.Min.y < b.Max.y && a.Max.y > b.Min.y) &&
 			(a.Min.z < b.Max.z && a.Max.z > b.Min.z);
 }
-glm::ivec3 Funcs::GetFaceDirect(short face)
+glm::ivec3 Util::GetFaceDirect(short face)
 {
 	return fdirects[face];
 }
 
-std::string Funcs::GetApplicationPath()
+std::string Util::GetApplicationPath()
 {
 #include <limits.h>
 #include <stdlib.h>

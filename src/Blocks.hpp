@@ -16,7 +16,7 @@ enum Blocks
 	Sand=7
 };
 //extern int block_textures[BLOCK_NUM][6];
-namespace BlockMethods
+namespace BlockUtil
 {
 	extern bool IsTransparent(block b);
 	extern bool HaveHitbox(block b);

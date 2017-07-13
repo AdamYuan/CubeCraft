@@ -45,7 +45,8 @@ namespace Resource
 
 		//Init block texture
 		BlockTexture.Load2dArray(TEXTURE_DIR + "blocks.png", BLOCK_TEX_NUM);
-		BlockTexture.SetParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE);
+		BlockTexture.BuildMipmap();
+		BlockTexture.SetParameters(GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST, GL_REPEAT);
 
 		//Init font textures
 		FontTexture.Load2d(TEXTURE_DIR + "font.png");

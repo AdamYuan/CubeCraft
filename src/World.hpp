@@ -28,6 +28,4 @@ public:
 	std::list<glm::ivec3> ChunkRenderList;
 
 	void UpdateChunkLists();
-
-	void InitNoise();
 };

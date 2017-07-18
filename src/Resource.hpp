@@ -30,7 +30,8 @@ namespace Resource
 	extern Shader BlockShader;
 	extern std::string
 			BlockUniformCamera,
-			BlockUniformViewDistance;
+			BlockUniformViewDistance,
+			BlockUniformIsSemitransparent;
 
 //line shader
 	extern Shader LineShader;

@@ -1,6 +1,5 @@
 #include "Resource.hpp"
 #include "Blocks.hpp"
-#include <iostream>
 #define SHADER_DIR std::string("resource/shader/")
 #define TEXTURE_DIR std::string("resource/texture/")
 namespace Resource
@@ -12,7 +11,8 @@ namespace Resource
 	Shader BlockShader;
 	std::string
 			BlockUniformCamera,
-			BlockUniformViewDistance;
+			BlockUniformViewDistance,
+			BlockUniformIsSemitransparent;
 
 
 	Shader LineShader;
@@ -32,6 +32,7 @@ namespace Resource
 
 		BlockUniformCamera = "camera";
 		BlockUniformViewDistance = "viewDistance";
+		BlockUniformIsSemitransparent = "isSemitransparent";
 
 		//Init line shader
 		LineShader.LoadFromFile(SHADER_DIR + "line.vert", GL_VERTEX_SHADER);
@@ -57,5 +58,4 @@ namespace Resource
 		FontBoldTexture.BuildMipmap();
 		FontBoldTexture.SetParameters(GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR, GL_REPEAT);
 	}
-
 };

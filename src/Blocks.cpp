@@ -63,6 +63,5 @@ int BlockUtil::GetTexture(block b, short face)
 
 Box BlockUtil::GetBox(glm::ivec3 pos)
 {
-	return Box(pos,pos+1);
+	return Box(pos, pos+1);
 }
-

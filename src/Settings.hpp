@@ -1,6 +1,6 @@
 #pragma once
 
-#define MOVE_DIST 0.6f
+#define MOVE_DIST 0.5f
 #define MOUSE_SENSITIVITY 0.17f
 
 #define THREAD_NUM 3

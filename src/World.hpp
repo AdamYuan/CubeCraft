@@ -13,6 +13,7 @@ class World
 {
 private:
 	bool minDistanceCompare(const glm::ivec3 &a, const glm::ivec3 &b);
+	size_t updateThreadNum, loadingThreadNum;
 	void chunkUpdateFunc();
 	void chunkLoadingFunc();
 

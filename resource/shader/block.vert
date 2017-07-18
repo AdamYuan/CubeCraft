@@ -15,11 +15,11 @@ const float AOcurve[4] = float[4](0.658503, 0.7569, 0.87, 1.0);
 void main()
 {
 	frag_face=face;
-	frag_ao=AOcurve[int(lighting.x+0.5)];
-	frag_light=1.0f;//((lighting.y+2.0)/17.0);
+	frag_ao = AOcurve[int(lighting.x+0.5)];
+	frag_light = 1.0f;//((lighting.y+2.0)/17.0);
 
-	gl_Position=matrix*position;
+	gl_Position = matrix*position;
 
-   	pos=round(position.xyz);
+   	pos = position.xyz;
    	texcoord = coord;
 }

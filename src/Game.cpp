@@ -9,7 +9,6 @@ namespace Game
 	Player player;
 
 	bool control=true;
-	bool showWireframe=false;
 	std::string FpsInfo;
 
 	MyGL::FrameRateManager frameRateManager;

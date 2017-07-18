@@ -21,6 +21,7 @@ void World::chunkLoadingFunc()
 	bgMtx.lock();
 	if(chunkLoadingSet.empty())
 	{
+		loadingThreadNum--;
 		bgMtx.unlock();
 		return;
 	}
@@ -44,12 +45,14 @@ void World::chunkLoadingFunc()
 		std::copy(std::begin(blk), std::end(blk), std::begin(chk->blk));
 		chunkLoadedSet.insert(pos);
 	}
+	loadingThreadNum--;
 	bgMtx.unlock();
 }
 void World::chunkUpdateFunc()
 {
 	bgMtx.lock();
 	if(chunkUpdateSet.empty()) {
+		updateThreadNum--;
 		bgMtx.unlock();
 		return;
 	}
@@ -62,12 +65,13 @@ void World::chunkUpdateFunc()
 	ChunkPtr chk = Voxels.GetChunk(pos);
 	if(!chk)
 	{
+		updateThreadNum--;
 		bgMtx.unlock();
 		return;
 	}
 	chk->UpdatedMesh = true;
 	chk->SolidMeshData.clear();
-	chk->TransMeshData.clear();
+	chk->SemitransMeshData.clear();
 
 	block blk[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)];
 	std::uninitialized_copy(std::begin(chk->blk), std::end(chk->blk), std::begin(blk));
@@ -82,8 +86,9 @@ void World::chunkUpdateFunc()
 	if(chk)
 	{
 		chk->SolidMeshData = MeshData.first;
-		chk->TransMeshData = MeshData.second;
+		chk->SemitransMeshData = MeshData.second;
 	}
+	updateThreadNum--;
 	bgMtx.unlock();
 }
 void World::UpdateChunkLists()
@@ -91,7 +96,6 @@ void World::UpdateChunkLists()
 	//if(!bgMtx.try_lock())
 	//	return;
 	bgMtx.lock();
-
 
 	ChunkRenderList.clear();
 	glm::ivec3 minLoadRange = Game::player.ChunkPos
@@ -147,7 +151,7 @@ void World::UpdateChunkLists()
 		else if(!chk->UpdatedMesh)
 			// chunk is loaded but hasn't meshed
 			chunkUpdateSet.insert(pos);
-		else if(!chk->SolidMeshData.empty() || !chk->TransMeshData.empty())
+		else if(!chk->SolidMeshData.empty() || !chk->SemitransMeshData.empty())
 		{
 			bool update = true;
 			glm::ivec3 neighbour;
@@ -162,12 +166,12 @@ void World::UpdateChunkLists()
 				chk->SolidMeshData.clear();
 				chk->SolidMeshData.shrink_to_fit();
 
-				chk->TransMeshData.clear();
-				chk->TransMeshData.shrink_to_fit();
+				chk->SemitransMeshData.clear();
+				chk->SemitransMeshData.shrink_to_fit();
 			}
 		}
 
-		if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())
+		if(chk->SolidMeshObject->Empty() && chk->SemitransMeshObject->Empty())
 			// don't Render if there weren't any thing in the chunk mesh
 		{
 			++i;
@@ -190,11 +194,16 @@ void World::UpdateChunkLists()
 
 	lastPlayerChunkPos = Game::player.ChunkPos;
 
-	if(!chunkUpdateSet.empty())
-		threadPool.enqueue(&World::chunkUpdateFunc, this);
-
-	if(!chunkLoadingSet.empty())
+	while(loadingThreadNum < chunkLoadingSet.size()) {
 		threadPool.enqueue(&World::chunkLoadingFunc, this);
+		loadingThreadNum++;
+	}
+	while(updateThreadNum < chunkUpdateSet.size()) {
+		threadPool.enqueue(&World::chunkUpdateFunc, this);
+		updateThreadNum++;
+	}
+
+	//printf("%lu, %lu\n", updateThreadNum, loadingThreadNum);
 
 	bgMtx.unlock();
 }

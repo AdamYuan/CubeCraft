@@ -13,6 +13,7 @@ private:
 	double lastGravityTime;
 public:
 	const Box PlayerBox = Box(glm::vec3(-0.3f, -1.6f, -0.3f), glm::vec3(0.3f));
+	float MovementSpeed;
 	glm::vec3 Position = glm::vec3(0);
 	glm::ivec3 ChunkPos = glm::ivec3(INT_MAX), SelectedPosition = glm::ivec3(INT_MAX), SelectedFaceVec;
 	void StartTimer();

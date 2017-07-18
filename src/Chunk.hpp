@@ -38,7 +38,7 @@ public:
 	block blk[(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)*(CHUNK_SIZE + 2)];
 
 	std::vector<vert_block> SolidMeshData;
-	std::vector<vert_block> TransMeshData;
+	std::vector<vert_block> SemitransMeshData;
 	glm::ivec3 ChunkPos;
 	std::string ChunkLabel;
 
@@ -62,5 +62,5 @@ public:
 	bool UpdatedLight=false;
 
 	std::unique_ptr<MyGL::VertexObject> SolidMeshObject;
-	std::unique_ptr<MyGL::VertexObject> TransMeshObject;
+	std::unique_ptr<MyGL::VertexObject> SemitransMeshObject;
 };

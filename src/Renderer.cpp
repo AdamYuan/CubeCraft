@@ -13,8 +13,8 @@ void Renderer::ApplyChunkMesh(ChunkPtr chk) {
 										Resource::Attributes::BFacing, 1,
 										Resource::Attributes::BLighting, 2);
 
-	chk->TransMeshObject->SetDataVec(chk->TransMeshData);
-	chk->TransMeshObject->SetAttributes(4,
+	chk->SemitransMeshObject->SetDataVec(chk->SemitransMeshData);
+	chk->SemitransMeshObject->SetAttributes(4,
 										Resource::Attributes::Position, 3,
 										Resource::Attributes::Texcoord, 3,
 										Resource::Attributes::BFacing, 1,
@@ -46,7 +46,7 @@ void Renderer::RenderWorld(World *wld) {
 			continue;
 
 		ChunkPtr chk = wld->Voxels.GetChunk(pos);
-		//if(chk->SolidMeshObject->Empty() && chk->TransMeshObject->Empty())
+		//if(chk->SolidMeshObject->Empty() && chk->SemitransMeshObject->Empty())
 		//	continue;
 
 		visibleChunks.push_back(chk);
@@ -62,14 +62,15 @@ void Renderer::RenderWorld(World *wld) {
 
 	glPolygonOffset(1, 1);
 
+	Resource::BlockShader.PassInt(Resource::BlockUniformIsSemitransparent, 0);
 	for(ChunkPtr chk : visibleChunks)
 		chk->SolidMeshObject->Render(GL_TRIANGLES);
 
 	glDepthMask(GL_FALSE);
-	glDisable(GL_CULL_FACE);
+
+	Resource::BlockShader.PassInt(Resource::BlockUniformIsSemitransparent, 1);
 	for(ChunkPtr chk : visibleChunks)
-		chk->TransMeshObject->Render(GL_TRIANGLES);
-	glEnable(GL_CULL_FACE);
+		chk->SemitransMeshObject->Render(GL_TRIANGLES);
 
 	glDisable(GL_POLYGON_OFFSET_FILL);
 	glDepthMask(GL_TRUE);

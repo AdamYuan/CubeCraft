@@ -13,7 +13,7 @@ Chunk::Chunk(SuperChunk *_parent,glm::ivec3 _chunkPos,std::string _chunkLabel)
 		:parent(_parent),ChunkPos(_chunkPos),ChunkLabel(_chunkLabel)
 {
 	SolidMeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
-	TransMeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
+	SemitransMeshObject = std::unique_ptr<MyGL::VertexObject>(new MyGL::VertexObject());
 	std::uninitialized_fill(std::begin(beCovered), std::end(beCovered), false);
 	std::uninitialized_fill(std::begin(blk), std::end(blk), Blocks::Air);
 	std::uninitialized_fill(std::begin(lightMap), std::end(lightMap), 0);
@@ -448,12 +448,12 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 			for (std::size_t j = 0; j < CHUNK_SIZE; ++j)
 				for (std::size_t i = 0; i < CHUNK_SIZE;)
 				{
-					int c = mask[counter];
+					int quadBlock = mask[counter];
 					FaceLighting fli = lightMask[counter];
-					if (c)
+					if (quadBlock)
 					{
 						// Compute Width
-						for (width = 1; c == mask[counter + width] && fli == lightMask[counter + width] &&
+						for (width = 1; quadBlock == mask[counter + width] && fli == lightMask[counter + width] &&
 										i + width < CHUNK_SIZE; ++width);
 
 						// Compute Height
@@ -461,7 +461,7 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 						for (height = 1; j + height < CHUNK_SIZE; ++height)
 						{
 							for (std::size_t k = 0; k < width; ++k)
-								if (c != mask[counter + k + height * CHUNK_SIZE] ||
+								if (quadBlock != mask[counter + k + height * CHUNK_SIZE] ||
 									fli != lightMask[counter + k + height * CHUNK_SIZE])
 								{
 									done = true;
@@ -478,36 +478,36 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 
 						float du[3] = {0}, dv[3] = {0};
 
-						short f = (short) (axis * 2 + (c <= 0));
+						short quadFace = (short) (axis * 2 + (quadBlock <= 0));
 
 
-						if (c > 0)
+						if (quadBlock > 0)
 						{
 							dv[v] = height+TJUNC_DELTA*2.0f;
 							du[u] = width+TJUNC_DELTA*2.0f;
 						}
 						else
 						{
-							c = -c;
+							quadBlock = -quadBlock;
 							du[v] = height+TJUNC_DELTA*2.0f;
 							dv[u] = width+TJUNC_DELTA*2.0f;
 						}
 
-						int tex= BlockUtil::GetTexture((block) c, f);
+						int tex= BlockUtil::GetTexture((block) quadBlock, quadFace);
 						float vx=chunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
 								vy=chunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
 								vz=chunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;
 
 						vert_block v00={vx, vy, vz, du[u]+dv[u], du[v]+dv[v],
-										(float)tex,(float)f,(float)fli.AO[0],(float)fli.Light[0]};
+										(float)tex,(float)quadFace,(float)fli.AO[0],(float)fli.Light[0]};
 						vert_block v01={vx + du[0], vy + du[1], vz + du[2], dv[u], dv[v],
-										(float)tex,(float)f,(float)fli.AO[1],(float)fli.Light[1]};
+										(float)tex,(float)quadFace,(float)fli.AO[1],(float)fli.Light[1]};
 						vert_block v10={vx + du[0] + dv[0], vy + du[1] + dv[1], vz + du[2] + dv[2], 0.0f, 0.0f,
-										(float)tex,(float)f,(float)fli.AO[2],(float)fli.Light[2]};
+										(float)tex,(float)quadFace,(float)fli.AO[2],(float)fli.Light[2]};
 						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2], du[u], du[v],
-										(float)tex,(float)f,(float)fli.AO[3],(float)fli.Light[3]};
+										(float)tex,(float)quadFace,(float)fli.AO[3],(float)fli.Light[3]};
 
-						if(f == LEFT || f == RIGHT)
+						if(quadFace == LEFT || quadFace == RIGHT)
 						{
 							std::swap(v11.u, v11.v);
 							std::swap(v01.u, v01.v);
@@ -522,7 +522,7 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 						//bool flip=(fli.AO[0]+fli.Light[0]+fli.AO[2]+fli.Light[2] >
 						//		   fli.AO[1]+fli.Light[1]+fli.AO[3]+fli.Light[3]);
 						std::vector<vert_block> *Target;
-						if(c == Blocks::Water)
+						if(quadBlock == Blocks::Water)
 							Target = &TransMeshData;
 						else
 							Target = &SolidMeshData;
@@ -540,6 +540,17 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 							Target->push_back(v00);
 							Target->push_back(v10);
 							Target->push_back(v11);
+
+							if(quadBlock == Blocks::Water || quadBlock == Blocks::Leaves)
+							{
+								Target->push_back(v10);
+								Target->push_back(v01);
+								Target->push_back(v00);
+
+								Target->push_back(v11);
+								Target->push_back(v10);
+								Target->push_back(v00);
+							}
 						}
 						else
 						{
@@ -555,6 +566,17 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 							Target->push_back(v00);
 							Target->push_back(v01);
 							Target->push_back(v11);
+
+							if(quadBlock == Blocks::Water || quadBlock == Blocks::Leaves)
+							{
+								Target->push_back(v11);
+								Target->push_back(v10);
+								Target->push_back(v01);
+
+								Target->push_back(v11);
+								Target->push_back(v01);
+								Target->push_back(v00);
+							}
 						}
 
 						for (std::size_t b = 0; b < width; ++b)

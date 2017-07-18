@@ -8,6 +8,7 @@ out vec4 color;
 uniform sampler2DArray sampler;
 uniform vec3 camera;
 uniform float viewDistance;
+uniform int isSemitransparent;
 
 float fog_factor;
 float fog_height;
@@ -30,8 +31,12 @@ void main()
 
 	color = texture(sampler, texcoord);
 
-	if(color.a==0.0f) //do not draw if there were nothing
-		discard;
+    if(isSemitransparent == 0)
+    	if(color.a != 1.0f) //do not draw if there were nothing
+			color = textureLod(sampler, texcoord, 0);
+
+    if(color.a == 0.0f)
+        discard;
 
 	float intensity=intensities[f];
 

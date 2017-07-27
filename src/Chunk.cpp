@@ -187,7 +187,7 @@ glm::ivec3 ChunkFuncs::GetPosFromNum(int num)
 void ChunkFuncs::SetTerrain(
 		glm::ivec3 chunkPos,
 		block (&blk)[(CHUNK_SIZE + 2) * (CHUNK_SIZE + 2) * (CHUNK_SIZE + 2)],
-		unsigned long seed
+		int seed
 )
 {
 #define SCALE 45
@@ -251,6 +251,8 @@ void ChunkFuncs::SetTerrain(
 								blk[arrayIndex] = Blocks::Grass;
 						}
 						else if(k == height && k < seaLevel)
+							blk[arrayIndex] = Blocks::Dirt;
+						else if(k >= height - (dotsNoiseSet[index] + 2.0f) * 2)
 							blk[arrayIndex] = Blocks::Dirt;
 						else
 							blk[arrayIndex] = Blocks::Stone;
@@ -480,31 +482,34 @@ std::pair<std::vector<vert_block>, std::vector<vert_block>> ChunkFuncs::GetMesh(
 
 						short quadFace = (short) (axis * 2 + (quadBlock <= 0));
 
-
 						if (quadBlock > 0)
 						{
-							dv[v] = height+TJUNC_DELTA*2.0f;
-							du[u] = width+TJUNC_DELTA*2.0f;
+							dv[v] = height;
+							du[u] = width;
 						}
 						else
 						{
 							quadBlock = -quadBlock;
-							du[v] = height+TJUNC_DELTA*2.0f;
-							dv[u] = width+TJUNC_DELTA*2.0f;
+							du[v] = height;
+							dv[u] = width;
 						}
 
 						int tex= BlockUtil::GetTexture((block) quadBlock, quadFace);
-						float vx=chunkPos.x*CHUNK_SIZE+x[0]-(!q[0])*TJUNC_DELTA,
-								vy=chunkPos.y*CHUNK_SIZE+x[1]-(!q[1])*TJUNC_DELTA,
-								vz=chunkPos.z*CHUNK_SIZE+x[2]-(!q[2])*TJUNC_DELTA;
+						float vx=chunkPos.x*CHUNK_SIZE+x[0],
+								vy=chunkPos.y*CHUNK_SIZE+x[1],
+								vz=chunkPos.z*CHUNK_SIZE+x[2];
 
-						vert_block v00={vx, vy, vz, du[u]+dv[u], du[v]+dv[v],
+						vert_block v00={vx, vy, vz,
+										du[u]+dv[u], du[v]+dv[v],
 										(float)tex,(float)quadFace,(float)fli.AO[0],(float)fli.Light[0]};
-						vert_block v01={vx + du[0], vy + du[1], vz + du[2], dv[u], dv[v],
+						vert_block v01={vx + du[0], vy + du[1], vz + du[2],
+										dv[u], dv[v],
 										(float)tex,(float)quadFace,(float)fli.AO[1],(float)fli.Light[1]};
-						vert_block v10={vx + du[0] + dv[0], vy + du[1] + dv[1], vz + du[2] + dv[2], 0.0f, 0.0f,
+						vert_block v10={vx + du[0] + dv[0], vy + du[1] + dv[1], vz + du[2] + dv[2],
+										0.0f, 0.0f,
 										(float)tex,(float)quadFace,(float)fli.AO[2],(float)fli.Light[2]};
-						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2], du[u], du[v],
+						vert_block v11={vx + dv[0], vy + dv[1], vz + dv[2],
+										du[u], du[v],
 										(float)tex,(float)quadFace,(float)fli.AO[3],(float)fli.Light[3]};
 
 						if(quadFace == LEFT || quadFace == RIGHT)

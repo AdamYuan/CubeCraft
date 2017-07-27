@@ -18,7 +18,7 @@ namespace ChunkFuncs
 	extern void SetTerrain(
 			glm::ivec3 chunkPos,
 			block (&blk)[(CHUNK_SIZE + 2) * (CHUNK_SIZE + 2) * (CHUNK_SIZE + 2)],
-			unsigned long seed
+			int seed
 	);
 	extern std::pair<std::vector<vert_block>, std::vector<vert_block>> GetMesh(
 			glm::ivec3 chunkPos,

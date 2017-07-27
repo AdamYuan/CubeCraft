@@ -22,7 +22,6 @@ private:
 	std::unordered_set<glm::ivec3> chunkUpdateSet;
 
 	std::mutex bgMtx;
-	FastNoiseSIMD *fastNoise;
 public:
 	SuperChunk Voxels;
 

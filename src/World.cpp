@@ -194,16 +194,21 @@ void World::UpdateChunkLists()
 
 	lastPlayerChunkPos = Game::player.ChunkPos;
 
-	while(loadingThreadNum < chunkLoadingSet.size()) {
+	size_t index = 0;
+	while(loadingThreadNum < chunkLoadingSet.size() && index < MAX_LOADING_THREAD_IN_FRAME)
+	{
 		threadPool.enqueue(&World::chunkLoadingFunc, this);
 		loadingThreadNum++;
-	}
-	while(updateThreadNum < chunkUpdateSet.size()) {
-		threadPool.enqueue(&World::chunkUpdateFunc, this);
-		updateThreadNum++;
+		index ++;
 	}
 
-	//printf("%lu, %lu\n", updateThreadNum, loadingThreadNum);
+	index = 0;
+	while(updateThreadNum < chunkUpdateSet.size() && index < MAX_UPDATE_THREAD_IN_FRAME)
+	{
+		threadPool.enqueue(&World::chunkUpdateFunc, this);
+		updateThreadNum++;
+		index ++;
+	}
 
 	bgMtx.unlock();
 }

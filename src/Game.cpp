@@ -10,6 +10,7 @@ namespace Game
 
 	bool control=true;
 	std::string FpsInfo;
+	block usingBlock = Blocks::Stone;
 
 	MyGL::FrameRateManager frameRateManager;
 	MyGL::Camera camera;
@@ -23,18 +24,17 @@ namespace Game
 	extern void framebufferSizeCallback(GLFWwindow *, int width, int height);
 	extern void keyCallback(GLFWwindow*, int key, int scancode, int action, int mods);
 	extern void focusCallback(GLFWwindow*, int focused);
-	extern void mouseButtonCallback(GLFWwindow*, int button, int action, int mods);
 
 	void Init()
 	{
 		glfwInit();
 
+		glfwWindowHint(GLFW_SAMPLES, 4);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 		glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-		//glfwWindowHint(GLFW_SAMPLES, 4);
 
 		Window = glfwCreateWindow(Width, Height, "CubeCraft", nullptr, nullptr);
 		if(Window == nullptr)
@@ -53,7 +53,7 @@ namespace Game
 		}
 
 		//SetBlock MyGL default mode
-		//glEnable(GL_MULTISAMPLE);
+		glEnable(GL_MULTISAMPLE);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
@@ -69,7 +69,6 @@ namespace Game
 		glfwSetFramebufferSizeCallback(Window, framebufferSizeCallback);
 		glfwSetKeyCallback(Window, keyCallback);
 		glfwSetWindowFocusCallback(Window, focusCallback);
-		glfwSetMouseButtonCallback(Window, mouseButtonCallback);
 
 		framebufferSizeCallback(Window, Width, Height);
 	}
@@ -132,11 +131,6 @@ namespace Game
 	{
 		control = focused != 0;
 	}
-	void mouseButtonCallback(GLFWwindow*, int button, int action, int mods)
-	{
-		//if(button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		//	world.Voxels.SetBlock(player.SelectedPosition, Blocks::Air);
-	}
 	void KeyControl()
 	{
 		if(glfwGetKey(Window, GLFW_KEY_W))
@@ -161,7 +155,12 @@ namespace Game
 	{
 		static double i = 0;
 		static bool leftFirst, rightFirst;
-		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+		if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS)
+		{
+			usingBlock = world.Voxels.GetBlock(player.SelectedPosition);
+			leftFirst = true, rightFirst = true;
+		}
+		else if(glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
 		{
 			rightFirst = true;
 			if(leftFirst || glfwGetTime() - i >= 0.18)
@@ -178,7 +177,7 @@ namespace Game
 					!Util::Intersect(Box(player.PlayerBox.Min + HITTEST_DELTA, player.PlayerBox.Max - HITTEST_DELTA) + player.Position,
 									 BlockUtil::GetBox(player.SelectedPosition + player.SelectedFaceVec)))
 			{
-				world.Voxels.SetBlock(player.SelectedPosition + player.SelectedFaceVec, Blocks::Stone);
+				world.Voxels.SetBlock(player.SelectedPosition + player.SelectedFaceVec, usingBlock);
 				i = glfwGetTime();
 				rightFirst = false;
 			}

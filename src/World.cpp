@@ -51,14 +51,14 @@ void World::chunkLoadingFunc()
 void World::chunkUpdateFunc()
 {
 	bgMtx.lock();
-	if(chunkUpdateSet.empty()) {
+	if(chunkUpdatingSet.empty()) {
 		updateThreadNum--;
 		bgMtx.unlock();
 		return;
 	}
 
 	glm::ivec3 pos(INT_MAX);
-	for(const glm::ivec3 &i : chunkUpdateSet)
+	for(const glm::ivec3 &i : chunkUpdatingSet)
 		if(minDistanceCompare(i, pos))
 			pos = i;
 
@@ -76,7 +76,7 @@ void World::chunkUpdateFunc()
 	block blk[(CHUNK_SIZE+2) * (CHUNK_SIZE+2) * (CHUNK_SIZE+2)];
 	std::uninitialized_copy(std::begin(chk->blk), std::end(chk->blk), std::begin(blk));
 
-	chunkUpdateSet.erase(pos);
+	chunkUpdatingSet.erase(pos);
 	bgMtx.unlock();
 
 	auto MeshData = ChunkFuncs::GetMesh(pos, blk);
@@ -87,15 +87,14 @@ void World::chunkUpdateFunc()
 	{
 		chk->SolidMeshData = MeshData.first;
 		chk->SemitransMeshData = MeshData.second;
+		chunkUpdatedSet.insert(chk->ChunkPos);
 	}
 	updateThreadNum--;
 	bgMtx.unlock();
 }
 void World::UpdateChunkLists()
 {
-	//if(!bgMtx.try_lock())
-	//	return;
-	bgMtx.lock();
+	std::lock_guard<std::mutex> lockGuard(bgMtx);
 
 	ChunkRenderList.clear();
 	glm::ivec3 minLoadRange = Game::player.ChunkPos
@@ -108,7 +107,7 @@ void World::UpdateChunkLists()
 			for(i3.y = minLoadRange.y; i3.y <= maxLoadRange.y; ++i3.y)
 				for(i3.z = minLoadRange.z; i3.z <= maxLoadRange.z; ++i3.z)
 				{
-					if(glm::distance((glm::vec3)Game::player.ChunkPos, (glm::vec3)i3) <= (float)CHUNK_LOAD_DISTANCE &&
+					if(glm::distance(glm::vec3(Game::player.ChunkPos), glm::vec3(i3)) <= (float)CHUNK_LOAD_DISTANCE &&
 							!chunkLoadingSet.count(i3) && !chunkLoadedSet.count(i3))
 					{
 						Voxels.SetChunk(i3);
@@ -126,18 +125,20 @@ void World::UpdateChunkLists()
 		if(!chk)
 			// delete if the chunk is null
 		{
+			std::cout << Util::Vec3ToString(pos) << std::endl;
 			i = Voxels.Chunks.erase(i);
 			continue;
 		}
 
-		if(glm::distance((glm::vec3)Game::player.ChunkPos, (glm::vec3)pos) > (float)CHUNK_LOAD_DISTANCE)
+		if(glm::distance(glm::vec3(Game::player.ChunkPos), glm::vec3(pos)) > (float)CHUNK_LOAD_DISTANCE)
 		{// chunk is out of loading range
 			++i;
 			//completely erase the chunk
 			Voxels.EraseChunk(pos);
 			chunkLoadingSet.erase(pos);
-			chunkUpdateSet.erase(pos);
+			chunkUpdatingSet.erase(pos);
 			chunkLoadedSet.erase(pos);
+			chunkUpdatedSet.erase(pos);
 			//printf("Unloaded: (%d, %d, %d)\n", pos.x, pos.y, pos.z);
 			continue;
 		}
@@ -148,15 +149,17 @@ void World::UpdateChunkLists()
 			++i;
 			continue;
 		}
-		else if(!chk->UpdatedMesh)
+		else if(!chk->UpdatedMesh) {
 			// chunk is loaded but hasn't meshed
-			chunkUpdateSet.insert(pos);
-		else if(!chk->SolidMeshData.empty() || !chk->SemitransMeshData.empty())
+			chunkUpdatingSet.insert(pos);
+			chunkUpdatedSet.erase(pos);
+		}
+		else if(chunkUpdatedSet.count(pos) && !(chk->SolidMeshData.empty() && chk->SemitransMeshData.empty()))
 		{
 			bool update = true;
 			glm::ivec3 neighbour;
 			for(short f = 0; f < 6 && update; ++f)
-				if(Voxels.GetChunk(neighbour = pos + Util::GetFaceDirect(f)) && chunkUpdateSet.count(neighbour))
+				if(Voxels.GetChunk(neighbour = pos + Util::GetFaceDirect(f)) && !chunkUpdatedSet.count(neighbour))
 					update = false;
 			if(update)
 			{
@@ -171,14 +174,14 @@ void World::UpdateChunkLists()
 			}
 		}
 
-		if(chk->SolidMeshObject->Empty() && chk->SemitransMeshObject->Empty())
+		if(chk->SolidMeshObject.Empty() && chk->SemitransMeshObject.Empty())
 			// don't Render if there weren't any thing in the chunk mesh
 		{
 			++i;
 			continue;
 		}
 
-		glm::vec3 center=(glm::vec3) pos*(float)CHUNK_SIZE+glm::vec3(CHUNK_SIZE/2);
+		glm::vec3 center = glm::vec3(pos) * (float)CHUNK_SIZE + glm::vec3(CHUNK_SIZE/2);
 
 		if(glm::distance(Game::camera.Position, center) > VIEW_DISTANCE+CHUNK_SIZE)
 			//cull far away Chunks
@@ -203,14 +206,12 @@ void World::UpdateChunkLists()
 	}
 
 	index = 0;
-	while(updateThreadNum < chunkUpdateSet.size() && index < MAX_UPDATE_THREAD_IN_FRAME)
+	while(updateThreadNum < chunkUpdatingSet.size() && index < MAX_UPDATE_THREAD_IN_FRAME)
 	{
 		threadPool.enqueue(&World::chunkUpdateFunc, this);
 		updateThreadNum++;
 		index ++;
 	}
-
-	bgMtx.unlock();
 }
 
 
